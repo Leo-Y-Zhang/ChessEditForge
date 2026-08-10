@@ -1,0 +1,1801 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MAGNUS CARLSEN</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #05070b; color: #e9edf2;
+         font-family: Bahnschrift, "Segoe UI", system-ui, sans-serif;
+         display: flex; flex-direction: column; align-items: center;
+         min-height: 100vh; padding: 16px; gap: 14px; }
+  h1 { font-family: Impact, "Arial Black", sans-serif; font-weight: 400;
+       letter-spacing: 1px; font-size: 22px; margin: 4px 0 0; color: #e8b64a; }
+  canvas { height: min(82vh, 900px); aspect-ratio: 9 / 16; width: auto;
+           border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.6);
+           background: #05070b; }
+  .bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  button { font: 600 16px Bahnschrift, "Segoe UI", sans-serif; color: #06121c;
+           background: #e8b64a; border: 0; border-radius: 10px; padding: 12px 20px;
+           cursor: pointer; transition: transform .08s ease, filter .12s ease; }
+  button:hover { filter: brightness(1.08); } button:active { transform: translateY(1px); }
+  button:disabled { opacity: .5; cursor: default; }
+  button.ghost { background: transparent; color: #e9edf2; border: 1px solid #33404d; }
+  #status { min-height: 20px; font-size: 13px; color: #93a2b3; text-align: center; max-width: 640px; }
+  .hint { font-size: 12px; color: #63707e; max-width: 640px; text-align: center; line-height: 1.5; }
+</style>
+</head>
+<body>
+  <h1>MAGNUS CARLSEN</h1>
+  <canvas id="stage" width="1080" height="1920"></canvas>
+  <div class="bar">
+    <button id="replay" class="ghost">▶ Replay</button>
+    <button id="export">⭳ Export video</button>
+  </div>
+  <div id="status">loading…</div>
+  <div class="hint">Silent by design — post it to TikTok and add a trending sound; the beat-drop lands at ~18s.
+    Best exported in Chrome/Edge for a true .mp4. Everything runs on your device; nothing is uploaded.</div>
+<script>
+
+/* ---- edit definition ---- */
+;(function(){var g=(typeof window!=='undefined'?window:globalThis);g.CEF=g.CEF||{};g.CEF.def={"coldPiece":"K","accent":"#e8b64a","duration":19,"intro":{"kicker":"WORLD CHAMPIONSHIP · 2016","white":"MAGNUS CARLSEN","black":"SERGEY KARJAKIN","note":"the world title on the line"},"context":"Carlsen – Karjakin  ·  2016","montage":{"fromPly":56,"toPly":71,"keyPlies":[57,64,68]},"bridgeLine":"the suffocation begins…","beats":["world No. 1 for 15 years.","125 games unbeaten.","he doesn't beat you.","he suffocates you."],"tension":"one move.","drop":{"fromPly":98,"toPly":98,"line":"the queen.","mateKingSq":"h7","glowSq":"h6","focusSq":"h6","settleHighlight":["c1","c8"]},"badges":[{"ply":98,"sq":"h6","type":"brilliant"}],"finishKicker":"50. Qh6+  —  a queen sacrifice","factKicker":"world champion · five times","outro":{"title":"MAGNUS CARLSEN","tag":"the machine with a pulse."}};})();
+
+/* ---- theme.js ---- */
+;(function(){
+'use strict';
+/* theme.js — single source of truth for the look (colors, fonts, sizing). */
+const THEME = {
+  W: 1080,
+  H: 1920,
+  fps: 60,
+  duration: 20, // seconds
+
+  bg: { top: '#0b0f15', mid: '#0a1520', bottom: '#04060a', glow: 'rgba(40,90,130,0.30)' },
+
+  board: {
+    light: '#6a7583',
+    dark: '#2c333d',
+    frame: '#c8a24a',   // gold frame
+    frameDark: '#8a6c26',
+    coord: 'rgba(255,255,255,0.28)',
+    lastFrom: 'rgba(232,182,74,0.28)',
+    lastTo: 'rgba(232,182,74,0.55)',
+  },
+
+  piece: {
+    white: '#f4efe4',
+    whiteRim: '#20242b',
+    whiteDetail: 'rgba(90,70,30,0.55)',
+    black: '#141a21',
+    blackRim: '#8fb6cf',   // cool rim so black pieces read on dark squares
+    blackDetail: 'rgba(180,210,230,0.5)',
+    shadow: 'rgba(0,0,0,0.55)',
+  },
+
+  accent: '#e8b64a',   // gold
+  danger: '#ff4d3d',   // checkmate red
+
+  text: {
+    primary: '#ffffff',
+    dim: 'rgba(255,255,255,0.72)',
+    accent: '#e8b64a',
+  },
+
+  fonts: {
+    display: 'Impact, "Arial Black", sans-serif',       // name + CHECKMATE
+    head: 'Bahnschrift, "Segoe UI Semibold", sans-serif', // stat cards
+    body: '"Segoe UI", Bahnschrift, sans-serif',          // quiet lines
+  },
+};
+
+if (typeof module !== 'undefined' && module.exports) module.exports = THEME;
+else { (typeof window !== 'undefined' ? window : globalThis).CEF =
+  Object.assign((typeof window !== 'undefined' ? window : globalThis).CEF || {}, { theme: THEME }); }
+
+})();
+
+/* ---- engine.js ---- */
+;(function(){
+'use strict';
+/*
+ * engine.js — pure timeline math shared by the browser player and the Node
+ * renderer. No canvas or DOM here: given the storyboard config and a time t,
+ * it answers "what should be on screen?".
+ */
+
+const clamp01 = (t) => (t < 0 ? 0 : t > 1 ? 1 : t);
+const lerp = (a, b, t) => a + (b - a) * t;
+
+const ease = {
+  clamp01,
+  lerp,
+  linear: (t) => t,
+  outCubic: (t) => 1 - Math.pow(1 - t, 3),
+  inCubic: (t) => t * t * t,
+  inOutCubic: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
+  outExpo: (t) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t)),
+  outBack: (t) => {
+    const c1 = 1.70158, c3 = c1 + 1;
+    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+  },
+};
+
+// Which captions are visible at time t, with their opacity and entrance progress.
+function activeCaptions(captions, t) {
+  const out = [];
+  for (const cap of captions) {
+    if (t < cap.start || t > cap.end) continue;
+    const inDur = cap.inDur == null ? 0.35 : cap.inDur;
+    const outDur = cap.outDur == null ? 0.35 : cap.outDur;
+    const fadeIn = clamp01((t - cap.start) / (inDur || 1e-6));
+    const fadeOut = clamp01((cap.end - t) / (outDur || 1e-6));
+    const opacity = Math.min(fadeIn, fadeOut);
+    if (opacity <= 0) continue;
+    out.push({ cap, opacity, enter: fadeIn, exit: 1 - fadeOut });
+  }
+  return out;
+}
+
+// Map a time onto the montage of moves. The piece GLIDES over the first
+// `glide` fraction of its slot, then HOLDS for the rest — a deliberate
+// "move… beat… move" rhythm instead of a fast blur. When the storyboard
+// provides a weighted `flurrySchedule` (important moves hold longer), slots
+// come from it; otherwise every move gets an equal slot.
+// `slotFrac` is the raw 0..1 position within the slot (for camera pulses).
+function plyAt(cfg, t) {
+  const glide = cfg.montageGlide != null ? cfg.montageGlide : 0.58;
+  const sched = cfg.flurrySchedule;
+  if (sched && sched.length) {
+    let slot = sched[0];
+    for (const s of sched) { if (t >= s.start) slot = s; else break; }
+    const slotFrac = clamp01((t - slot.start) / (slot.end - slot.start || 1e-6));
+    return { ply: slot.ply, progress: clamp01(slotFrac / glide), slotFrac };
+  }
+  const n = cfg.flurryToPly - cfg.flurryFromPly + 1;
+  const frac = clamp01((t - cfg.flurryStart) / (cfg.flurryEnd - cfg.flurryStart));
+  const pos = frac * n;
+  let idx = Math.floor(pos);
+  if (idx >= n) idx = n - 1;
+  const ply = cfg.flurryFromPly + idx;
+  const slotFrac = clamp01(pos - idx);
+  const progress = clamp01(slotFrac / glide);
+  return { ply, progress, slotFrac };
+}
+
+const API = { ease, clamp01, lerp, activeCaptions, plyAt };
+
+if (typeof module !== 'undefined' && module.exports) module.exports = API;
+else { (typeof window !== 'undefined' ? window : globalThis).CEF =
+  Object.assign((typeof window !== 'undefined' ? window : globalThis).CEF || {}, { engine: API }); }
+
+})();
+
+/* ---- chess.js ---- */
+;(function(){
+'use strict';
+/*
+ * chess.js — minimal, pure chess move logic for replaying a known game.
+ *
+ * Board: length-64 array. index = row*8 + file, where row 0 = rank 8 (top of
+ * screen) and file 0 = a-file (left). So 'a8' = 0, 'h8' = 7, 'a1' = 56, 'h1' = 63.
+ * Pieces: 'P N B R Q K' = white, lowercase = black, null = empty.
+ *
+ * This is NOT a full legal-move engine. It resolves standard-algebraic (SAN)
+ * moves against a position well enough to replay a real, already-legal game,
+ * with a pin/check filter used only to break disambiguation ties.
+ */
+
+function sq(nameStr) {
+  const file = nameStr.charCodeAt(0) - 97; // 'a' -> 0
+  const rank = Number(nameStr[1]);         // 1..8
+  const row = 8 - rank;                    // rank 8 -> row 0
+  return row * 8 + file;
+}
+
+function name(idx) {
+  const row = Math.floor(idx / 8);
+  const file = idx % 8;
+  const rank = 8 - row;
+  return String.fromCharCode(97 + file) + rank;
+}
+
+function emptyBoard() {
+  return new Array(64).fill(null);
+}
+
+function startPosition() {
+  const b = emptyBoard();
+  const back = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'];
+  for (let f = 0; f < 8; f++) {
+    b[sq('a8') + f] = back[f];          // black back rank (row 0)
+    b[sq('a7') + f] = 'p';              // black pawns (row 1)
+    b[sq('a2') + f] = 'P';              // white pawns (row 6)
+    b[sq('a1') + f] = back[f].toUpperCase(); // white back rank (row 7)
+  }
+  return b;
+}
+
+const isWhitePiece = (p) => !!p && p === p.toUpperCase();
+const colorOf = (p) => (p == null ? null : (isWhitePiece(p) ? 'w' : 'b'));
+const sign = (n) => (n > 0 ? 1 : n < 0 ? -1 : 0);
+
+function clearPath(board, from, to) {
+  const fr = Math.floor(from / 8), ff = from % 8;
+  const tr = Math.floor(to / 8), tf = to % 8;
+  const sr = sign(tr - fr), sf = sign(tf - ff);
+  let r = fr + sr, f = ff + sf;
+  while (r !== tr || f !== tf) {
+    if (board[r * 8 + f] != null) return false;
+    r += sr; f += sf;
+  }
+  return true;
+}
+
+// Can a piece of `type` (uppercase letter) standing on `from` move to `to`,
+// geometrically (ignoring check)? Pawns handled separately.
+function canReach(board, from, to, type) {
+  const fr = Math.floor(from / 8), ff = from % 8;
+  const tr = Math.floor(to / 8), tf = to % 8;
+  const dr = tr - fr, df = tf - ff;
+  const adr = Math.abs(dr), adf = Math.abs(df);
+  switch (type) {
+    case 'N': return (adr === 1 && adf === 2) || (adr === 2 && adf === 1);
+    case 'K': return Math.max(adr, adf) === 1;
+    case 'B': return adr === adf && adr !== 0 && clearPath(board, from, to);
+    case 'R': return (dr === 0 || df === 0) && (adr + adf !== 0) && clearPath(board, from, to);
+    case 'Q': return ((adr === adf && adr !== 0) || (dr === 0 || df === 0)) &&
+                     (adr + adf !== 0) && clearPath(board, from, to);
+    default: return false;
+  }
+}
+
+// Is `color`'s king attacked in this position? Used only to break SAN ties.
+function isInCheck(board, color) {
+  const king = color === 'w' ? 'K' : 'k';
+  let kIdx = -1;
+  for (let i = 0; i < 64; i++) if (board[i] === king) { kIdx = i; break; }
+  if (kIdx < 0) return false;
+  const kr = Math.floor(kIdx / 8), kf = kIdx % 8;
+  for (let i = 0; i < 64; i++) {
+    const p = board[i];
+    if (p == null || colorOf(p) === color) continue;
+    const type = p.toUpperCase();
+    if (type === 'P') {
+      // pawn attacks toward the king square
+      const r = Math.floor(i / 8), f = i % 8;
+      const dir = isWhitePiece(p) ? -1 : 1; // white attacks up (row-1)
+      if (r + dir === kr && Math.abs(f - kf) === 1) return true;
+    } else if (canReach(board, i, kIdx, type)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function applyMove(board, move) {
+  const b = board.slice();
+  const from = sq(move.from), to = sq(move.to);
+  const piece = b[from];
+  if (piece == null) throw new Error('applyMove: no piece on ' + move.from);
+  const white = isWhitePiece(piece);
+  const type = piece.toUpperCase();
+  const fromF = from % 8, toF = to % 8;
+  const fromR = Math.floor(from / 8);
+
+  // En passant: pawn changes file onto an empty square -> capture passed pawn.
+  if (type === 'P' && fromF !== toF && b[to] == null) {
+    b[fromR * 8 + toF] = null;
+  }
+
+  // Castling: king moves two files -> shift the rook too.
+  if (type === 'K' && Math.abs(toF - fromF) === 2) {
+    const row = fromR;
+    if (toF === 6) { // kingside
+      b[row * 8 + 5] = b[row * 8 + 7];
+      b[row * 8 + 7] = null;
+    } else if (toF === 2) { // queenside
+      b[row * 8 + 3] = b[row * 8 + 0];
+      b[row * 8 + 0] = null;
+    }
+  }
+
+  if (move.promo) {
+    b[to] = white ? move.promo.toUpperCase() : move.promo.toLowerCase();
+  } else {
+    b[to] = piece;
+  }
+  b[from] = null;
+  return b;
+}
+
+function resolveSan(board, sanRaw, side) {
+  const white = side === 'w';
+  let s = sanRaw.replace(/[+#!?]/g, '').trim();
+
+  // Castling
+  if (s === 'O-O' || s === '0-0') {
+    return { from: white ? 'e1' : 'e8', to: white ? 'g1' : 'g8' };
+  }
+  if (s === 'O-O-O' || s === '0-0-0') {
+    return { from: white ? 'e1' : 'e8', to: white ? 'c1' : 'c8' };
+  }
+
+  // Promotion suffix
+  let promo = null;
+  const pm = s.match(/=([QRBN])$/);
+  if (pm) { promo = pm[1]; s = s.slice(0, -2); }
+
+  const capture = s.includes('x');
+  s = s.replace('x', '');
+
+  let type, rest;
+  if ('KQRBN'.includes(s[0])) { type = s[0]; rest = s.slice(1); }
+  else { type = 'P'; rest = s; }
+
+  const toName = rest.slice(-2);
+  const disamb = rest.slice(0, -2); // '', file, rank, or file+rank
+  const to = sq(toName);
+  const toR = Math.floor(to / 8), toF = to % 8;
+
+  if (type === 'P') {
+    let from;
+    if (capture) {
+      const srcFile = disamb.charCodeAt(0) - 97;
+      const srcRow = white ? toR + 1 : toR - 1;
+      from = srcRow * 8 + srcFile;
+    } else {
+      const oneR = white ? toR + 1 : toR - 1;
+      const pawn = white ? 'P' : 'p';
+      if (board[oneR * 8 + toF] === pawn) {
+        from = oneR * 8 + toF;
+      } else {
+        const twoR = white ? toR + 2 : toR - 2;
+        from = twoR * 8 + toF; // double push
+      }
+    }
+    return { from: name(from), to: toName, promo };
+  }
+
+  // Piece move: gather candidates of the right type/color that can reach `to`.
+  const want = white ? type : type.toLowerCase();
+  let candidates = [];
+  for (let i = 0; i < 64; i++) {
+    if (board[i] !== want) continue;
+    if (canReach(board, i, to, type)) candidates.push(i);
+  }
+
+  // Disambiguation by given file and/or rank.
+  if (disamb) {
+    for (const ch of disamb) {
+      if (ch >= 'a' && ch <= 'h') {
+        const f = ch.charCodeAt(0) - 97;
+        candidates = candidates.filter((i) => i % 8 === f);
+      } else if (ch >= '1' && ch <= '8') {
+        const r = 8 - Number(ch);
+        candidates = candidates.filter((i) => Math.floor(i / 8) === r);
+      }
+    }
+  }
+
+  // Tie-break by legality (pinned pieces can't actually make the move).
+  if (candidates.length > 1) {
+    const legal = candidates.filter((i) => {
+      const b2 = applyMove(board, { from: name(i), to: toName, promo });
+      return !isInCheck(b2, side);
+    });
+    if (legal.length >= 1) candidates = legal;
+  }
+
+  if (candidates.length !== 1) {
+    throw new Error(`resolveSan: ${sanRaw} -> ${candidates.length} candidates`);
+  }
+  return { from: name(candidates[0]), to: toName, promo };
+}
+
+function applySan(board, san, side) {
+  return applyMove(board, resolveSan(board, san, side));
+}
+
+// Replay a SAN list from the start position (skips result tokens like "1-0").
+function replay(sans) {
+  let board = startPosition();
+  const positions = [];
+  const moves = [];
+  let side = 'w';
+  for (const raw of sans) {
+    if (/^(1-0|0-1|1\/2-1\/2|\*)$/.test(raw.trim())) continue;
+    const mv = resolveSan(board, raw, side);
+    board = applyMove(board, mv);
+    positions.push(board);
+    moves.push({ from: mv.from, to: mv.to, san: raw, side, promo: mv.promo || null });
+    side = side === 'w' ? 'b' : 'w';
+  }
+  return { positions, moves };
+}
+
+const API = {
+  sq, name, emptyBoard, startPosition, applyMove, resolveSan, applySan, replay,
+  isInCheck, colorOf, isWhitePiece,
+};
+
+if (typeof module !== 'undefined' && module.exports) module.exports = API;
+else { (typeof window !== 'undefined' ? window : globalThis).CEF =
+  Object.assign((typeof window !== 'undefined' ? window : globalThis).CEF || {}, { chess: API }); }
+
+})();
+
+/* ---- game.js ---- */
+;(function(){
+'use strict';
+/*
+ * game.js — the featured game as verified data.
+ *
+ * Carlsen vs. Karjakin, World Chess Championship 2016, rapid tie-break game 4
+ * (Moscow, 30 Nov 2016). Sicilian Defence, Prins Variation (ECO B54).
+ * Carlsen (White) won 1-0; Karjakin resigned after 50.Qh6+ because the queen
+ * sacrifice forces mate: 50...gxh6 51.Rxf7#  or  50...Kxh6 51.Rh8#.
+ *
+ * Move list independently verified against ChessBase, 365chess and Wikipedia.
+ * Swap this file's `san` array (and `title`) to feature a different game.
+ */
+const GAME = {
+  title: 'MAGNUS CARLSEN',
+  subtitle: 'Carlsen – Karjakin, 2016',
+  eco: 'Sicilian Defence (B54)',
+  result: '1-0',
+  // Flat half-move list (white, black, white, black, ...).
+  san: [
+    'e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Nxd4', 'Nf6', 'f3', 'e5',
+    'Nb3', 'Be7', 'c4', 'a5', 'Be3', 'a4', 'Nc1', 'O-O', 'Nc3', 'Qa5',
+    'Qd2', 'Na6', 'Be2', 'Nc5', 'O-O', 'Bd7', 'Rb1', 'Rfc8', 'b4', 'axb3',
+    'axb3', 'Qd8', 'Nd3', 'Ne6', 'Nb4', 'Bc6', 'Rfd1', 'h5', 'Bf1', 'h4',
+    'Qf2', 'Nd7', 'g3', 'Ra3', 'Bh3', 'Rca8', 'Nc2', 'R3a6', 'Nb4', 'Ra5',
+    'Nc2', 'b6', 'Rd2', 'Qc7', 'Rbd1', 'Bf8', 'gxh4', 'Nf4', 'Bxf4', 'exf4',
+    'Bxd7', 'Qxd7', 'Nb4', 'Ra3', 'Nxc6', 'Qxc6', 'Nb5', 'Rxb3', 'Nd4', 'Qxc4',
+    'Nxb3', 'Qxb3', 'Qe2', 'Be7', 'Kg2', 'Qe6', 'h5', 'Ra3', 'Rd3', 'Ra2',
+    'R3d2', 'Ra3', 'Rd3', 'Ra7', 'Rd5', 'Rc7', 'Qd2', 'Qf6', 'Rf5', 'Qh4',
+    'Rc1', 'Ra7', 'Qxf4', 'Ra2+', 'Kh1', 'Qf2', 'Rc8+', 'Kh7', 'Qh6+',
+  ],
+  // The finishing move index (0-based half-move) — the Qh6+ queen sacrifice.
+  finishPly: 98,
+};
+
+if (typeof module !== 'undefined' && module.exports) module.exports = GAME;
+else { (typeof window !== 'undefined' ? window : globalThis).CEF =
+  Object.assign((typeof window !== 'undefined' ? window : globalThis).CEF || {}, { game: GAME }); }
+
+})();
+
+/* ---- pieces.js ---- */
+;(function(){
+'use strict';
+/*
+ * pieces.js — chess pieces drawn as vector silhouettes in a 1000x1000 grid.
+ * Font/asset free, so they render identically in the browser and in the Node
+ * video render. drawPiece() fills a clean silhouette + rim, in the given colors.
+ */
+
+function rr(ctx, x, y, w, h, r) {
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+}
+function ell(ctx, cx, cy, rx, ry) {
+  ctx.moveTo(cx + rx, cy);
+  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+}
+
+// Each builder appends sub-paths to the current path (in the 1000 grid).
+const SHAPE = {
+  P(ctx) {
+    rr(ctx, 300, 812, 400, 96, 40);            // base
+    ctx.moveTo(415, 812);                       // body (neck)
+    ctx.bezierCurveTo(430, 700, 430, 620, 470, 560);
+    ctx.lineTo(530, 560);
+    ctx.bezierCurveTo(570, 620, 570, 700, 585, 812);
+    ctx.closePath();
+    rr(ctx, 398, 528, 204, 52, 26);            // collar
+    ell(ctx, 500, 430, 118, 118);              // head
+  },
+  R(ctx) {
+    rr(ctx, 288, 812, 424, 96, 40);            // base
+    ctx.moveTo(360, 812);                       // body
+    ctx.bezierCurveTo(352, 700, 352, 560, 372, 470);
+    ctx.lineTo(628, 470);
+    ctx.bezierCurveTo(648, 560, 648, 700, 640, 812);
+    ctx.closePath();
+    rr(ctx, 330, 424, 340, 58, 12);            // shoulder band
+    // crenellations
+    rr(ctx, 330, 300, 96, 130, 6);
+    rr(ctx, 452, 300, 96, 130, 6);
+    rr(ctx, 574, 300, 96, 130, 6);
+    rr(ctx, 330, 388, 340, 44, 6);
+  },
+  B(ctx) {
+    rr(ctx, 300, 812, 400, 96, 40);            // base
+    rr(ctx, 366, 756, 268, 60, 26);            // collar
+    ctx.moveTo(500, 168);                       // mitre body
+    ctx.bezierCurveTo(636, 300, 660, 520, 610, 700);
+    ctx.bezierCurveTo(596, 742, 560, 760, 500, 760);
+    ctx.bezierCurveTo(440, 760, 404, 742, 390, 700);
+    ctx.bezierCurveTo(340, 520, 364, 300, 500, 168);
+    ctx.closePath();
+    ell(ctx, 500, 150, 52, 52);                // top ball
+  },
+  Q(ctx) {
+    rr(ctx, 280, 826, 440, 92, 40);            // base
+    rr(ctx, 344, 770, 312, 60, 26);            // collar
+    ctx.moveTo(360, 770);                       // bell body
+    ctx.bezierCurveTo(392, 640, 420, 520, 400, 420);
+    ctx.lineTo(600, 420);
+    ctx.bezierCurveTo(580, 520, 608, 640, 640, 770);
+    ctx.closePath();
+    // crown: five spikes down to a band
+    const tips = [372, 436, 500, 564, 628];
+    ctx.moveTo(360, 430);
+    for (const x of tips) { ctx.lineTo(x, 236); ctx.lineTo(x + 32, 430); }
+    ctx.lineTo(640, 430);
+    ctx.closePath();
+    for (const x of tips) ell(ctx, x + 16, 224, 40, 40); // balls on tips
+  },
+  K(ctx) {
+    rr(ctx, 280, 826, 440, 92, 40);            // base
+    rr(ctx, 344, 770, 312, 60, 26);            // collar
+    ctx.moveTo(360, 770);                       // bell body
+    ctx.bezierCurveTo(392, 640, 420, 520, 400, 430);
+    ctx.lineTo(600, 430);
+    ctx.bezierCurveTo(580, 520, 608, 640, 640, 770);
+    ctx.closePath();
+    rr(ctx, 374, 336, 252, 100, 14);           // crown band
+    rr(ctx, 470, 150, 60, 200, 8);             // cross vertical
+    rr(ctx, 410, 206, 180, 58, 8);             // cross horizontal
+  },
+  N(ctx) {
+    rr(ctx, 292, 828, 416, 92, 40);            // base
+    rr(ctx, 330, 792, 340, 46, 16);            // pedestal step
+    // Modern VECTOR knight: a sleek icon-like silhouette — near-straight
+    // nose-bridge diagonal, flat nose front, a deep V-notch under the jaw
+    // separating head from chest, tight paired ears, and one smooth crest
+    // sweep from the ears down to the base.
+    ctx.moveTo(408, 800);                              // front of neck at the step
+    ctx.bezierCurveTo(400, 700, 386, 640, 364, 592);   // chest rises
+    ctx.lineTo(350, 520);                              // crisp V-notch down (sharp chevron)
+    ctx.lineTo(302, 500);                              // crisp V-notch up (sharp chevron)
+    ctx.lineTo(262, 504);                              // clean jawline to muzzle base
+    ctx.lineTo(216, 456);                              // squared muzzle corner (hard angle)
+    ctx.lineTo(208, 404);                              // flat modern nose front
+    ctx.bezierCurveTo(252, 360, 330, 300, 426, 248);   // straight nose-bridge diagonal
+    ctx.bezierCurveTo(436, 244, 442, 242, 446, 240);   // brow step
+    ctx.bezierCurveTo(458, 200, 476, 156, 500, 128);   // front ear up (sleek)
+    ctx.bezierCurveTo(524, 152, 534, 180, 540, 210);   // front ear down
+    ctx.bezierCurveTo(544, 208, 548, 206, 552, 202);   // tight valley
+    ctx.bezierCurveTo(560, 176, 572, 148, 588, 132);   // back ear up
+    ctx.bezierCurveTo(610, 160, 618, 190, 622, 218);   // back ear down
+    ctx.bezierCurveTo(640, 250, 656, 280, 672, 318);   // skull into the crest
+    ctx.bezierCurveTo(712, 400, 716, 520, 688, 640);   // one smooth crest sweep
+    ctx.bezierCurveTo(672, 716, 652, 768, 640, 800);   // settles onto the step
+    ctx.closePath();
+  },
+};
+
+// Accent marks (eye, mane ridge, mitre slit) drawn in detail color after the
+// silhouette. Each draws itself; fill/stroke styles are pre-set to the color.
+const DETAIL = {
+  N(ctx) {
+    ctx.beginPath();                                   // sleek teardrop eye
+    ctx.ellipse(408, 300, 22, 12, -0.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();                                   // single mane sweep
+    ctx.moveTo(588, 290);
+    ctx.bezierCurveTo(642, 390, 650, 520, 612, 690);
+    ctx.lineWidth = 20;
+    ctx.stroke();
+  },
+  B(ctx) {
+    ctx.beginPath();                                   // mitre slit
+    ctx.moveTo(470, 300);
+    ctx.lineTo(560, 420);
+    ctx.lineWidth = 26;
+    ctx.stroke();
+  },
+};
+
+const _outBack = (t) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
+const _outCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+function drawPiece(ctx, type, isWhite, cx, cy, cell, theme, opts) {
+  opts = opts || {};
+  const s = cell * 0.95;
+  const fill = isWhite ? theme.piece.white : theme.piece.black;
+  const rim = isWhite ? theme.piece.whiteRim : theme.piece.blackRim;
+  const detail = isWhite ? theme.piece.whiteDetail : theme.piece.blackDetail;
+
+  ctx.save();
+  ctx.translate(cx, cy + cell * 0.02);
+  if (opts.topple != null) {
+    // a king toppling — pivot about its BASE so it falls over believably.
+    // mate = a fast fall with a little overshoot; resign = a slow, soft lay-down.
+    const p = opts.topple < 0 ? 0 : opts.topple > 1 ? 1 : opts.topple;
+    const soft = opts.toppleKind === 'resign';
+    const angle = soft ? _outCubic(p) * 1.4 : _outBack(p) * 1.5;
+    const baseY = cell * 0.38;
+    ctx.translate(0, baseY);
+    ctx.rotate(angle);
+    ctx.translate(0, -baseY);
+    if (soft) ctx.globalAlpha *= 1 - 0.35 * p;   // recede into the shadow
+  } else if (opts.rotate) {
+    ctx.rotate(opts.rotate);
+  }
+  if (opts.scale) ctx.scale(opts.scale, opts.scale);
+  ctx.translate(-s / 2, -s / 2);
+  ctx.scale(s / 1000, s / 1000);
+
+  // soft contact shadow
+  ctx.save();
+  ctx.fillStyle = theme.piece.shadow;
+  ctx.beginPath();
+  ell(ctx, 500, 900, 260, 46);
+  ctx.fill();
+  ctx.restore();
+
+  // silhouette
+  ctx.beginPath();
+  SHAPE[type](ctx);
+  if (opts.glow) { ctx.shadowColor = opts.glow; ctx.shadowBlur = 60; }
+  ctx.fillStyle = fill;
+  ctx.fill('nonzero');
+  ctx.shadowBlur = 0;
+
+  // rim outline for definition
+  ctx.beginPath();
+  SHAPE[type](ctx);
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 16;
+  ctx.strokeStyle = rim;
+  ctx.globalAlpha = isWhite ? 0.85 : 0.9;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // accents
+  if (DETAIL[type]) {
+    ctx.save();
+    ctx.fillStyle = detail;
+    ctx.strokeStyle = detail;
+    ctx.lineCap = 'round';
+    DETAIL[type](ctx);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+const API = { drawPiece };
+if (typeof module !== 'undefined' && module.exports) module.exports = API;
+else { (typeof window !== 'undefined' ? window : globalThis).CEF =
+  Object.assign((typeof window !== 'undefined' ? window : globalThis).CEF || {}, { pieces: API }); }
+
+})();
+
+/* ---- board.js ---- */
+;(function(){
+'use strict';
+/*
+ * board.js — draws the chessboard, coordinates and pieces for a given position,
+ * with an optional gliding move, capture fade, square highlights, camera push-in
+ * and a toppled losing king. Canvas-2D only (browser + Node identical).
+ */
+const _pieces = (typeof require !== 'undefined') ? require('./pieces.js')
+  : (typeof window !== 'undefined' ? window.CEF.pieces : globalThis.CEF.pieces);
+
+function layout(theme, size) {
+  const s = size || 1010;                 // bigger board -> clearer, bigger pieces
+  return { bx: (theme.W - s) / 2, by: 604, size: s, cs: s / 8 };
+}
+
+// chess.com-style move-quality badges (Brilliant, Great, Blunder, ...)
+const BADGE = {
+  brilliant: { bg: '#1aa88b', fg: '#ffffff', label: '!!' },
+  great: { bg: '#5b8bb0', fg: '#ffffff', label: '!' },
+  best: { bg: '#6aa84f', fg: '#ffffff', label: '★' },
+  good: { bg: '#7a9b76', fg: '#ffffff', label: '✓' },
+  mistake: { bg: '#e0912a', fg: '#ffffff', label: '?' },
+  blunder: { bg: '#ca3431', fg: '#ffffff', label: '??' },
+  mate: { bg: '#111417', fg: '#e8b64a', label: '#' },
+};
+
+function drawBadge(ctx, lo, sqName, type, scale) {
+  const b = BADGE[type] || BADGE.brilliant;
+  const file = sqName.charCodeAt(0) - 97;
+  const row = 8 - Number(sqName[1]);
+  const cx = lo.bx + file * lo.cs + lo.cs * 0.82;
+  const cy = lo.by + row * lo.cs + lo.cs * 0.18;
+  const r = lo.cs * 0.30 * (scale == null ? 1 : scale);
+  if (r <= 0) return;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = b.bg; ctx.fill();
+  ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  ctx.lineWidth = r * 0.12; ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.stroke();
+  ctx.fillStyle = b.fg;
+  ctx.font = `700 ${Math.round(r * (b.label.length > 1 ? 0.95 : 1.25))}px ${'Bahnschrift, sans-serif'}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(b.label, cx, cy + r * 0.04);
+  ctx.restore();
+}
+
+function drawShock(ctx, x, y, r, alpha, color) {
+  if (alpha <= 0 || r <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = Math.max(3, r * 0.06);
+  ctx.strokeStyle = color;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+}
+
+// Finish effects, drawn in board space (inside the camera transform).
+function drawEndFx(ctx, lo, ea, glowSq) {
+  if (ea.kind === 'mate') {
+    const c = centerOf(lo, ea.sq);
+    const lp = (ea.progress - 0.5) / 0.5;   // landing phase (king hits the board)
+    if (lp <= 0) return;
+    const k = Math.min(1, lp);
+    drawShock(ctx, c.x, c.y + lo.cs * 0.18, lo.cs * (0.35 + k * 1.15), (1 - k) * 0.85, '#dc3c32');
+    const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, lo.cs * 1.3);
+    g.addColorStop(0, `rgba(216,52,42,${(1 - k) * 0.45})`);
+    g.addColorStop(1, 'rgba(216,52,42,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(c.x - lo.cs * 1.5, c.y - lo.cs * 1.5, lo.cs * 3, lo.cs * 3);
+  } else if (ea.kind === 'resign') {
+    // dim the board to a soft spotlight on the brilliant move
+    const c = glowSq ? centerOf(lo, glowSq) : { x: lo.bx + lo.size / 2, y: lo.by + lo.size / 2 };
+    const dim = ea.progress * 0.62;
+    const g = ctx.createRadialGradient(c.x, c.y, lo.cs * 0.5, c.x, c.y, lo.size * 0.8);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, `rgba(4,6,10,${dim})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(lo.bx - 60, lo.by - 60, lo.size + 120, lo.size + 120);
+  }
+}
+
+function centerOf(lo, sqName) {
+  const file = sqName.charCodeAt(0) - 97;
+  const rank = Number(sqName[1]);
+  const row = 8 - rank;
+  return { x: lo.bx + file * lo.cs + lo.cs / 2, y: lo.by + row * lo.cs + lo.cs / 2 };
+}
+
+function drawFrame(ctx, lo, theme) {
+  const m = 22;
+  // outer gold frame with bevel
+  const g = ctx.createLinearGradient(0, lo.by - m, 0, lo.by + lo.size + m);
+  g.addColorStop(0, theme.board.frame);
+  g.addColorStop(1, theme.board.frameDark);
+  ctx.fillStyle = g;
+  roundRect(ctx, lo.bx - m, lo.by - m, lo.size + m * 2, lo.size + m * 2, 16);
+  ctx.fill();
+  ctx.fillStyle = '#05070b';
+  roundRect(ctx, lo.bx - 6, lo.by - 6, lo.size + 12, lo.size + 12, 8);
+  ctx.fill();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawSquares(ctx, lo, theme, highlight) {
+  for (let i = 0; i < 64; i++) {
+    const row = i >> 3, file = i % 8;
+    const x = lo.bx + file * lo.cs, y = lo.by + row * lo.cs;
+    ctx.fillStyle = (row + file) % 2 === 0 ? theme.board.light : theme.board.dark;
+    ctx.fillRect(x, y, lo.cs, lo.cs);
+  }
+  if (highlight) {
+    for (const [sqName, col] of highlight) {
+      const file = sqName.charCodeAt(0) - 97;
+      const row = 8 - Number(sqName[1]);
+      ctx.fillStyle = col;
+      ctx.fillRect(lo.bx + file * lo.cs, lo.by + row * lo.cs, lo.cs, lo.cs);
+    }
+  }
+}
+
+function drawCoords(ctx, lo, theme) {
+  ctx.fillStyle = theme.board.coord;
+  ctx.font = `600 ${Math.round(lo.cs * 0.16)}px ${theme.fonts.head}`;
+  ctx.textBaseline = 'alphabetic';
+  for (let f = 0; f < 8; f++) {
+    ctx.textAlign = 'left';
+    ctx.fillText(String.fromCharCode(97 + f), lo.bx + f * lo.cs + 6, lo.by + lo.size - 8);
+  }
+  for (let r = 0; r < 8; r++) {
+    ctx.textAlign = 'right';
+    ctx.fillText(String(8 - r), lo.bx + lo.size - 8, lo.by + r * lo.cs + lo.cs * 0.22);
+  }
+  ctx.textAlign = 'left';
+}
+
+// opts: { move:{from,to,side,progress}, highlight:[[sq,color]], glowSq, toppleSq,
+//         camera:{zoom, fx, fy, shakeX, shakeY} }
+function drawBoard(ctx, position, theme, opts) {
+  opts = opts || {};
+  const lo = opts.layout || layout(theme);
+  const cam = opts.camera;
+
+  ctx.save();
+  if (cam) {
+    const cx = cam.fx == null ? theme.W / 2 : cam.fx;
+    const cy = cam.fy == null ? lo.by + lo.size / 2 : cam.fy;
+    ctx.translate((cam.shakeX || 0), (cam.shakeY || 0));
+    ctx.translate(cx, cy);
+    ctx.scale(cam.zoom || 1, cam.zoom || 1);
+    ctx.translate(-cx, -cy);
+  }
+
+  drawFrame(ctx, lo, theme);
+  drawSquares(ctx, lo, theme, opts.highlight);
+  drawCoords(ctx, lo, theme);
+
+  // winning-square glow (e.g. the checkmate square)
+  if (opts.glowSq) {
+    const c = centerOf(lo, opts.glowSq);
+    const rad = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, lo.cs * 1.4);
+    rad.addColorStop(0, 'rgba(232,182,74,0.55)');
+    rad.addColorStop(1, 'rgba(232,182,74,0)');
+    ctx.fillStyle = rad;
+    ctx.fillRect(c.x - lo.cs * 1.6, c.y - lo.cs * 1.6, lo.cs * 3.2, lo.cs * 3.2);
+  }
+
+  const skipFrom = opts.move ? opts.move.from : null;
+  const captureSq = opts.move && opts.move.progress < 1 ? opts.move.to : null;
+
+  for (let i = 0; i < 64; i++) {
+    const p = position[i];
+    if (!p) continue;
+    const sqName = String.fromCharCode(97 + (i % 8)) + (8 - (i >> 3));
+    if (sqName === skipFrom) continue;
+    const isWhite = p === p.toUpperCase();
+    const type = p.toUpperCase();
+    const c = centerOf(lo, sqName);
+    let o = {};
+    if (opts.endAnim && opts.endAnim.sq === sqName) {
+      o.topple = opts.endAnim.progress; o.toppleKind = opts.endAnim.kind;
+      // a struck-down mate king glows so it pops as it falls (dark king on a
+      // dark square would otherwise vanish); a resigning king stays in shadow.
+      if (opts.endAnim.kind === 'mate') o.glow = 'rgba(230,78,60,0.92)';
+    }
+    if (sqName === captureSq) {
+      ctx.save();
+      ctx.globalAlpha = 1 - opts.move.progress;
+      _pieces.drawPiece(ctx, type, isWhite, c.x, c.y, lo.cs, theme, o);
+      ctx.restore();
+      continue;
+    }
+    _pieces.drawPiece(ctx, type, isWhite, c.x, c.y, lo.cs, theme, o);
+  }
+
+  // gliding piece
+  if (opts.move) {
+    const mv = opts.move;
+    const a = centerOf(lo, mv.from), b = centerOf(lo, mv.to);
+    const t = mv.ease == null ? mv.progress : mv.ease;
+    const x = a.x + (b.x - a.x) * t;
+    const y = a.y + (b.y - a.y) * t;
+    const piece = mv.piece;
+    const isWhite = piece === piece.toUpperCase();
+    const lift = Math.sin(Math.min(t, 1) * Math.PI) * lo.cs * 0.12;
+    // landing impact shockwave (bigger for a "big" move)
+    const prog = mv.progress;
+    if (prog > 0.7) {
+      const k = (prog - 0.7) / 0.3;
+      const big = mv.big ? 2.0 : 1.0;
+      drawShock(ctx, b.x, b.y, lo.cs * (0.28 + k * 0.9 * big), (1 - k) * (mv.big ? 0.75 : 0.4),
+        mv.glow || theme.accent);
+    }
+    _pieces.drawPiece(ctx, piece.toUpperCase(), isWhite, x, y - lift, lo.cs, theme,
+      { glow: mv.glow });
+  }
+
+  // end-of-edit finish effects (impact shock for a mate; spotlight dim for a resign)
+  if (opts.endAnim) drawEndFx(ctx, lo, opts.endAnim, opts.glowSq);
+
+  // move-quality badges (chess.com style), on top of everything, in board space
+  if (opts.badges) {
+    for (const bd of opts.badges) drawBadge(ctx, lo, bd.sq, bd.type, bd.scale);
+  }
+
+  ctx.restore();
+}
+
+const API = { layout, centerOf, drawBoard };
+if (typeof module !== 'undefined' && module.exports) module.exports = API;
+else { (typeof window !== 'undefined' ? window : globalThis).CEF =
+  Object.assign((typeof window !== 'undefined' ? window : globalThis).CEF || {}, { board: API }); }
+
+})();
+
+/* ---- captions.js ---- */
+;(function(){
+'use strict';
+/*
+ * captions.js — kinetic typography drawn on the canvas. Each style is a small
+ * renderer keyed by cap.style. All copy is supplied by the storyboard; this
+ * module only knows how to make text move.
+ */
+const _E = (typeof require !== 'undefined') ? require('./engine.js')
+  : (typeof window !== 'undefined' ? window.CEF.engine : globalThis.CEF.engine);
+const ease = _E.ease;
+
+function trackedText(ctx, text, x, y, spacing, align) {
+  const widths = [];
+  let total = 0;
+  for (const ch of text) { const w = ctx.measureText(ch).width; widths.push(w); total += w + spacing; }
+  total -= spacing;
+  let cx = align === 'center' ? x - total / 2 : align === 'right' ? x - total : x;
+  ctx.textAlign = 'left';
+  let i = 0;
+  for (const ch of text) { ctx.fillText(ch, cx, y); cx += widths[i++] + spacing; }
+  return total;
+}
+
+// Widest a caption may draw; everything scales down to fit inside the frame.
+const SAFE_W = 1044;
+
+function trackedWidth(ctx, text, spacing) {
+  let total = -spacing;
+  for (const ch of text) total += ctx.measureText(ch).width + spacing;
+  return total;
+}
+
+// Uniform shrink factor so `text` (already-set font) fits SAFE_W. A caption
+// can never overflow the frame; the fit test keeps copy short enough that
+// this stays a subtle safety net, never a visible squeeze.
+function fitScale(ctx, text, spacing) {
+  const w = trackedWidth(ctx, text, spacing);
+  return w > SAFE_W ? SAFE_W / w : 1;
+}
+
+// style renderers ------------------------------------------------------------
+const STYLES = {
+  kicker(ctx, cap, st, theme) {
+    const y = cap.y + (1 - st.enter) * 18;
+    ctx.globalAlpha = st.opacity;
+    ctx.fillStyle = cap.color || theme.text.dim;
+    ctx.font = `600 ${cap.size || 34}px ${theme.fonts.head}`;
+    ctx.textBaseline = 'middle';
+    const text = cap.text.toUpperCase();
+    const track = cap.track || 10;
+    const s = fitScale(ctx, text, track);
+    ctx.save();
+    ctx.translate(theme.W / 2, y);
+    ctx.scale(s, s);
+    trackedText(ctx, text, 0, 0, track, 'center');
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  },
+
+  name(ctx, cap, st, theme) {
+    // slam-in: overscale + settle with a little overshoot
+    const e = ease.outBack(st.enter);
+    const scale = 1.6 - 0.6 * ease.outCubic(st.enter);
+    ctx.save();
+    ctx.globalAlpha = st.opacity;
+    ctx.translate(theme.W / 2, cap.y);
+    ctx.fillStyle = cap.color || theme.text.primary;
+    ctx.font = `${cap.size || 172}px ${theme.fonts.display}`;
+    const text = cap.text.toUpperCase();
+    const track = cap.track || 6;
+    const fit = fitScale(ctx, text, track);   // resting width always fits
+    ctx.scale(scale * fit, scale * fit);
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 8;
+    trackedText(ctx, text, 0, 0, track, 'center');
+    ctx.restore();
+    ctx.globalAlpha = 1;
+    void e;
+  },
+
+  stat(ctx, cap, st, theme) {
+    const rise = (1 - ease.outCubic(st.enter)) * 40;
+    ctx.save();
+    ctx.globalAlpha = st.opacity;
+    ctx.translate(0, rise);
+    // accent bar
+    ctx.fillStyle = theme.accent;
+    ctx.fillRect(theme.W / 2 - 40, cap.y - cap.size * 0.72, 80, 6);
+    // big value
+    ctx.fillStyle = cap.color || theme.text.primary;
+    ctx.font = `${cap.size || 108}px ${theme.fonts.display}`;
+    ctx.textBaseline = 'alphabetic';
+    trackedText(ctx, cap.text.toUpperCase(), theme.W / 2, cap.y, cap.track || 2, 'center');
+    // sub label
+    if (cap.sub) {
+      ctx.fillStyle = theme.text.dim;
+      ctx.font = `600 ${cap.subSize || 36}px ${theme.fonts.head}`;
+      ctx.textBaseline = 'middle';
+      trackedText(ctx, cap.sub.toUpperCase(), theme.W / 2, cap.y + 44, 8, 'center');
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  },
+
+  line(ctx, cap, st, theme) {
+    const rise = (1 - ease.outCubic(st.enter)) * 34;
+    ctx.globalAlpha = st.opacity;
+    ctx.fillStyle = cap.color || theme.text.primary;
+    ctx.font = `${cap.size || 76}px ${theme.fonts.display}`;
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.75)'; ctx.shadowBlur = 24;
+    const text = cap.text.toUpperCase();
+    const track = cap.track || 3;
+    const s = fitScale(ctx, text, track);
+    ctx.save();
+    ctx.translate(theme.W / 2, cap.y + rise);
+    ctx.scale(s, s);
+    trackedText(ctx, text, 0, 0, track, 'center');
+    ctx.restore();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  },
+
+  checkmate(ctx, cap, st, theme) {
+    const pop = ease.outBack(Math.min(st.enter * 1.2, 1));
+    const scale = 0.7 + 0.3 * pop;
+    ctx.save();
+    ctx.globalAlpha = st.opacity;
+    ctx.translate(theme.W / 2, cap.y);
+    ctx.font = `${cap.size || 150}px ${theme.fonts.display}`;
+    const fit = fitScale(ctx, cap.text || 'CHECKMATE', 4);
+    ctx.scale(scale * fit, scale * fit);
+    ctx.textBaseline = 'middle';
+    // red glow behind
+    const word = cap.text || 'CHECKMATE';
+    ctx.shadowColor = theme.danger; ctx.shadowBlur = 50;
+    ctx.fillStyle = theme.danger;
+    trackedText(ctx, word, 0, 0, 4, 'center');
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#fff';
+    trackedText(ctx, word, 0, 0, 4, 'center');
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  },
+
+  tag(ctx, cap, st, theme) {
+    ctx.globalAlpha = st.opacity;
+    ctx.fillStyle = cap.color || theme.accent;
+    ctx.font = `italic ${cap.size || 46}px ${theme.fonts.body}`;
+    ctx.textBaseline = 'middle';
+    const s = fitScale(ctx, cap.text, 0);
+    ctx.save();
+    ctx.translate(theme.W / 2, cap.y + (1 - st.enter) * 16);
+    ctx.scale(s, s);
+    ctx.textAlign = 'center';
+    ctx.fillText(cap.text, 0, 0);
+    ctx.restore();
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = 1;
+  },
+};
+
+function drawCaptions(ctx, captions, t, theme) {
+  const live = _E.activeCaptions(captions, t);
+  for (const item of live) {
+    const fn = STYLES[item.cap.style] || STYLES.line;
+    ctx.save();
+    fn(ctx, item.cap, item, theme);
+    ctx.restore();
+  }
+}
+
+const API = { drawCaptions, trackedText, STYLES };
+if (typeof module !== 'undefined' && module.exports) module.exports = API;
+else { (typeof window !== 'undefined' ? window : globalThis).CEF =
+  Object.assign((typeof window !== 'undefined' ? window : globalThis).CEF || {}, { captions: API }); }
+
+})();
+
+/* ---- fx.js ---- */
+;(function(){
+'use strict';
+/*
+ * fx.js — cinematic full-frame effects: background, vignette, film grain,
+ * letterbox bars and flash. Canvas-2D only; the caller supplies a canvas
+ * factory once so grain works in both the browser and Node.
+ */
+
+function drawBackground(ctx, theme, t) {
+  const g = ctx.createLinearGradient(0, 0, 0, theme.H);
+  g.addColorStop(0, theme.bg.top);
+  g.addColorStop(0.5, theme.bg.mid);
+  g.addColorStop(1, theme.bg.bottom);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, theme.W, theme.H);
+
+  // slow breathing radial glow behind the board
+  const pulse = 0.5 + 0.5 * Math.sin(t * 0.6);
+  const cx = theme.W / 2, cy = theme.H * 0.56;
+  const rad = ctx.createRadialGradient(cx, cy, 0, cx, cy, theme.W * (0.9 + pulse * 0.1));
+  rad.addColorStop(0, theme.bg.glow);
+  rad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = rad;
+  ctx.fillRect(0, 0, theme.W, theme.H);
+}
+
+function vignette(ctx, theme, strength) {
+  const s = strength == null ? 0.9 : strength;
+  const cx = theme.W / 2, cy = theme.H / 2;
+  const rad = ctx.createRadialGradient(cx, cy, theme.H * 0.28, cx, cy, theme.H * 0.62);
+  rad.addColorStop(0, 'rgba(0,0,0,0)');
+  rad.addColorStop(1, `rgba(0,0,0,${s})`);
+  ctx.fillStyle = rad;
+  ctx.fillRect(0, 0, theme.W, theme.H);
+}
+
+function makeNoise(createCanvasFn, size) {
+  size = size || 256;
+  const cv = createCanvasFn(size, size);
+  const c = cv.getContext('2d');
+  const img = c.createImageData(size, size);
+  const d = img.data;
+  // deterministic-ish noise (seeded LCG so renders are reproducible)
+  let seed = 1234567;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  for (let i = 0; i < d.length; i += 4) {
+    const v = 120 + Math.floor(rnd() * 135);
+    d[i] = d[i + 1] = d[i + 2] = v;
+    d[i + 3] = Math.floor(rnd() * 90);
+  }
+  c.putImageData(img, 0, 0);
+  return cv;
+}
+
+function drawGrain(ctx, noise, theme, frame, alpha) {
+  if (!noise) return;
+  const size = noise.width;
+  const ox = (frame * 57) % size;
+  const oy = (frame * 131) % size;
+  ctx.save();
+  ctx.globalAlpha = alpha == null ? 0.06 : alpha;
+  ctx.globalCompositeOperation = 'overlay';
+  for (let x = -ox; x < theme.W; x += size) {
+    for (let y = -oy; y < theme.H; y += size) {
+      ctx.drawImage(noise, x, y);
+    }
+  }
+  ctx.restore();
+}
+
+function letterbox(ctx, theme, h) {
+  if (!h) return;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, theme.W, h);
+  ctx.fillRect(0, theme.H - h, theme.W, h);
+}
+
+function flash(ctx, theme, alpha, color) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = Math.min(alpha, 1);
+  ctx.fillStyle = color || '#ffffff';
+  ctx.fillRect(0, 0, theme.W, theme.H);
+  ctx.restore();
+}
+
+const API = { drawBackground, vignette, makeNoise, drawGrain, letterbox, flash };
+if (typeof module !== 'undefined' && module.exports) module.exports = API;
+else { (typeof window !== 'undefined' ? window : globalThis).CEF =
+  Object.assign((typeof window !== 'undefined' ? window : globalThis).CEF || {}, { fx: API }); }
+
+})();
+
+/* ---- brand.js ---- */
+;(function(){
+'use strict';
+/*
+ * brand.js — the channel identity watermarked on every edit.
+ * Change `handle` (and `name`) here to rebrand all edits at once.
+ */
+const BRAND = {
+  name: 'Example',
+  handle: '@example.chess',
+};
+
+if (typeof module !== 'undefined' && module.exports) module.exports = BRAND;
+else { (typeof window !== 'undefined' ? window : globalThis).CEF =
+  Object.assign((typeof window !== 'undefined' ? window : globalThis).CEF || {}, { brand: BRAND }); }
+
+})();
+
+/* ---- storygen.js ---- */
+;(function(){
+'use strict';
+/*
+ * storygen.js — the edit factory. Turns a compact edit definition into a full
+ * premium storyboard {cfg, captions}: a setup intro card, a name-slam hook,
+ * an escalating montage with move-quality badges, a tension push, a
+ * sacrifice->mate drop with impact effects, and a legend outro — all paced to
+ * the edit's duration and consistent across every edit (the house style).
+ *
+ * A definition looks like:
+ *   { id, coldPiece, accent, duration,
+ *     intro:{kicker,white,black,note}, hook:['A','B'], context:'...',
+ *     montage:{fromPly,toPly}, beats:['..','..'], tension:'..',
+ *     drop:{fromPly,toPly,line,mateKingSq,glowSq,focusSq,settleHighlight?},
+ *     badges:[{ply|at,sq,type}], finishKicker:'..', factKicker:'..',
+ *     outro:{title,tag} }
+ */
+const r2 = (x) => Math.round(x * 100) / 100;
+
+function makeStoryboard(def) {
+  // House tempo v3. The intro keeps its absolute timings (its pacing is right).
+  // Everything after it is built ADDITIVELY so nothing downstream is ever
+  // squeezed: a weighted montage (the key moves hold longest), an automatic
+  // fast-forward BRIDGE over any ply gap (the board never teleports), a
+  // tension beat, a weighted drop (the final move holds longest), a long
+  // mate/resign reveal, and an unhurried outro.
+  const TEMPO = 1.10;
+  const REVEAL_HOLD = 2.6;   // CHECKMATE/RESIGNS + kickers stay this long
+  const OUTRO_SPAN = 4.4;    // legend card + follow CTA; never rushed
+  const C = r2((def.duration || 18) * TEMPO);   // sizes the montage window
+  const A = def.accent || '#e6b03e';
+  const drop = def.drop;
+  const nDrop = drop.toPly - drop.fromPly + 1;
+
+  const flurryStart = 4.2;
+
+  // ---- montage schedule: important moves get the time they deserve ----
+  // (weights first; the window stretches if needed so no move is ever a blur)
+  const badgedPlies = new Set((def.badges || []).map((b) => b.ply));
+  const keyPlies = new Set((def.montage.keyPlies || []));
+  const flurrySchedule = [];
+  let flurryEnd;
+  {
+    const from = def.montage.fromPly, to = def.montage.toPly;
+    const w = [];
+    for (let p = from; p <= to; p++) {
+      w.push(badgedPlies.has(p) ? 1.85 : keyPlies.has(p) ? 1.5 : 1.0);
+    }
+    const total = w.reduce((a, b) => a + b, 0);
+    const MIN_SLOT = 0.31;
+    const win = Math.max(C * 0.56 - flurryStart, total * MIN_SLOT);
+    flurryEnd = r2(flurryStart + win);
+    let tAt = flurryStart;
+    for (let i = 0; i < w.length; i++) {
+      const end = i === w.length - 1 ? flurryEnd : tAt + (w[i] / total) * (flurryEnd - flurryStart);
+      flurrySchedule.push({ ply: from + i, start: tAt, end });
+      tAt = end;
+    }
+  }
+
+  // ---- bridge: if the finish starts later in the game, fast-forward the
+  // in-between moves instead of jumping the board to a new position ----
+  const gap = drop.fromPly - def.montage.toPly - 1;
+  let bridge = null;
+  if (gap > 0) {
+    const start = r2(flurryEnd + 0.5);
+    const dur = Math.min(Math.max(0.15 * gap, 1.0), 3.4);
+    bridge = { start, end: r2(start + dur), fromPly: def.montage.toPly + 1, toPly: drop.fromPly - 1 };
+  }
+
+  const tensionStart = r2((bridge ? bridge.end : flurryEnd) + 0.25);
+  const dropAt = r2(tensionStart + 2.45);
+
+  // ---- drop schedule: every finish move lands with weight; the FINAL move
+  // (the mate / the resignation-forcer) holds the longest ----
+  const dropSchedule = [];
+  let dropDur;
+  {
+    const FINAL_W = 1.55;
+    if (nDrop === 1) {
+      dropDur = 1.35;
+      dropSchedule.push({ ply: drop.fromPly, start: dropAt, end: r2(dropAt + dropDur) });
+    } else {
+      const sumW = (nDrop - 1) + FINAL_W;
+      const unit = Math.min(0.85, 4.6 / sumW);
+      dropDur = r2(unit * sumW);
+      let tAt = dropAt;
+      for (let p = drop.fromPly; p <= drop.toPly; p++) {
+        const end = p === drop.toPly ? r2(dropAt + dropDur) : r2(tAt + unit);
+        dropSchedule.push({ ply: p, start: r2(tAt), end });
+        tAt = end;
+      }
+    }
+  }
+
+  const mateRevealStart = r2(dropAt + dropDur + 0.1);
+  const mateRevealEnd = r2(mateRevealStart + REVEAL_HOLD);
+  const outroStart = mateRevealEnd;
+  const D = r2(outroStart + OUTRO_SPAN);
+  const fadeStart = r2(D - 1.15);
+
+  const cfg = {
+    duration: D,
+    coldEnd: 1.5, coldPiece: def.coldPiece || 'K',
+    boardFadeStart: 3.15, boardFadeEnd: 4.05,
+    flurryStart, flurryEnd, flurryFromPly: def.montage.fromPly, flurryToPly: def.montage.toPly,
+    flurrySchedule,
+    settleAt: r2(flurryEnd + 0.05),
+    prePly: drop.fromPly - 1,
+    tensionStart,
+    dropAt, dropDur, dropFromPly: drop.fromPly, dropToPly: drop.toPly,
+    dropSchedule,
+    mateKingSq: drop.mateKingSq, glowSq: drop.glowSq, focusSq: drop.focusSq,
+    resign: drop.endWord === 'RESIGNS',
+    settleHighlight: drop.settleHighlight,
+    mateRevealStart, mateRevealEnd, outroStart, fadeStart,
+    focusSqDup: drop.focusSq,
+    vignetteBase: 0.62, grainAmount: 0.06,
+    badges: [], impacts: [],
+  };
+  if (bridge) {
+    cfg.bridgeStart = bridge.start; cfg.bridgeEnd = bridge.end;
+    cfg.bridgeFromPly = bridge.fromPly; cfg.bridgeToPly = bridge.toPly;
+  }
+
+  function plyTime(p) {
+    for (const s of dropSchedule) if (s.ply === p) return r2(s.start + 0.72 * (s.end - s.start));
+    for (const s of flurrySchedule) if (s.ply === p) return r2(s.start + 0.72 * (s.end - s.start));
+    if (bridge && p >= bridge.fromPly && p <= bridge.toPly) {
+      const n = bridge.toPly - bridge.fromPly + 1;
+      return r2(bridge.start + ((p - bridge.fromPly + 0.72) / n) * (bridge.end - bridge.start));
+    }
+    return dropAt;
+  }
+  cfg.badges = (def.badges || []).map((b) => ({
+    at: b.at != null ? b.at : plyTime(b.ply), sq: b.sq, type: b.type, dur: b.dur || 2.1,
+  }));
+
+  const caps = [];
+  const push = (c) => caps.push(c);
+
+  // dramatic open flash
+  cfg.impacts.push({ at: 0.1, mag: 8, flash: 0.52, color: A, dur: 0.5 });
+
+  // ---- INTRO CARD (so viewers know exactly what they're watching) ----
+  const I = def.intro || {};
+  if (I.mode === 'concept') {
+    // a concept/teaching card (e.g. "THE 4-MOVE CHECKMATE")
+    if (I.kicker) push({ style: 'kicker', text: I.kicker, y: 470, size: 40, color: A, start: 0.5, end: 3.15, inDur: 0.4, outDur: 0.4 });
+    push({ style: 'name', text: I.line1 || '', y: 690, size: 118, start: 0.95, end: 3.15, inDur: 0.32, outDur: 0.4 });
+    if (I.line2) push({ style: 'name', text: I.line2, y: 890, size: 118, start: 1.25, end: 3.15, inDur: 0.32, outDur: 0.4 });
+    if (I.note) push({ style: 'tag', text: I.note, y: 1120, size: 48, start: 1.85, end: 3.15, inDur: 0.4, outDur: 0.4 });
+  } else {
+    // a player matchup card (WHITE vs BLACK)
+    if (I.kicker) push({ style: 'kicker', text: I.kicker, y: 168, size: 40, color: A, start: 0.5, end: 3.15, inDur: 0.4, outDur: 0.4 });
+    push({ style: 'kicker', text: 'WHITE', y: 560, size: 30, color: 'rgba(255,255,255,0.45)', start: 0.9, end: 3.15, inDur: 0.3, outDur: 0.4 });
+    push({ style: 'name', text: I.white || def.outro.title, y: 668, size: 96, start: 0.95, end: 3.15, inDur: 0.32, outDur: 0.4 });
+    push({ style: 'kicker', text: '— versus —', y: 858, size: 34, color: A, start: 1.15, end: 3.15, inDur: 0.3, outDur: 0.4 });
+    push({ style: 'kicker', text: 'BLACK', y: 992, size: 30, color: 'rgba(255,255,255,0.45)', start: 1.35, end: 3.15, inDur: 0.3, outDur: 0.4 });
+    push({ style: 'name', text: I.black || '', y: 1100, size: 82, start: 1.4, end: 3.15, inDur: 0.32, outDur: 0.4 });
+    if (I.note) push({ style: 'tag', text: I.note, y: 1320, size: 46, start: 1.9, end: 3.15, inDur: 0.4, outDur: 0.4 });
+  }
+  cfg.impacts.push({ at: 0.95, mag: 15, flash: 0.16, color: A, dur: 0.35 });
+  cfg.impacts.push({ at: 1.4, mag: 15, flash: 0.16, color: A, dur: 0.35 });
+
+  // ---- CONTEXT during montage ----
+  if (def.context) push({ style: 'kicker', text: def.context, y: 150, size: 32, color: A, start: 4.3, end: r2(flurryEnd - 0.1), inDur: 0.5, outDur: 0.5 });
+
+  // ---- escalation beats across the montage (the narrative) ----
+  const beats = def.beats || [];
+  const bStart = 4.55, bEnd = r2(flurryEnd + 0.05);
+  const slot = beats.length ? (bEnd - bStart) / beats.length : 0;
+  beats.forEach((txt, i) => {
+    const s = r2(bStart + i * slot);
+    push({ style: 'line', text: txt, y: 360, size: 74, start: s, end: r2(s + slot - 0.1), inDur: 0.3, outDur: 0.25 });
+    cfg.impacts.push({ at: s, mag: 8, dur: 0.3 });
+  });
+
+  // ---- bridge card (the fast-forwarded stretch of the game) ----
+  if (bridge && gap >= 4) {
+    const fullMoves = Math.round(gap / 2);
+    const txt = def.bridgeLine || `${fullMoves} moves later…`;
+    push({ style: 'kicker', text: txt, y: 352, size: 44, color: A,
+           start: r2(bridge.start - 0.1), end: r2(bridge.end + 0.1), inDur: 0.3, outDur: 0.3 });
+  }
+
+  // ---- tension ----
+  if (def.tension) push({ style: 'line', text: def.tension, y: 360, size: 80, start: r2(cfg.tensionStart + 0.35), end: r2(dropAt - 0.05), inDur: 0.35, outDur: 0.2 });
+
+  // ---- THE DROP ----
+  if (drop.line) push({ style: 'line', text: drop.line, y: 360, size: 94, color: A, start: dropAt, end: r2(dropAt + dropDur - 0.05), inDur: 0.28, outDur: 0.25 });
+  cfg.impacts.push({ at: dropAt, mag: 16, flash: 0.4, color: A, dur: 0.45 });
+
+  const endWord = def.drop.endWord || 'CHECKMATE';
+  push({ style: 'checkmate', text: endWord, y: 372, size: endWord.length > 9 ? 132 : 150, start: r2(dropAt + dropDur - 0.1), end: r2(mateRevealEnd - 0.05), inDur: 0.25, outDur: 0.45 });
+  if (def.finishKicker) push({ style: 'kicker', text: def.finishKicker, y: 545, size: 36, color: 'rgba(255,255,255,0.85)', start: r2(dropAt + dropDur + 0.3), end: r2(mateRevealEnd - 0.1), inDur: 0.5, outDur: 0.5 });
+  if (def.factKicker) push({ style: 'kicker', text: def.factKicker, y: 1665, size: 33, color: 'rgba(255,255,255,0.8)', start: r2(dropAt + dropDur + 0.5), end: r2(mateRevealEnd - 0.1), inDur: 0.5, outDur: 0.5 });
+
+  // ---- OUTRO (a full OUTRO_SPAN of unhurried hold; nothing pops off early) ----
+  const O = def.outro || {};
+  push({ style: 'name', text: O.title || '', y: 292, size: 104, start: r2(outroStart + 0.15), end: r2(D - 0.45), inDur: 0.5, outDur: 0.75 });
+  if (O.tag) push({ style: 'tag', text: O.tag, y: 470, size: 50, start: r2(outroStart + 0.75), end: r2(D - 0.45), inDur: 0.6, outDur: 0.75 });
+  // no ♟ glyph here: the render fonts have no pawn and draw a tofu box
+  push({ style: 'kicker', text: 'follow for more', y: 1604, size: 42, color: 'rgba(255,255,255,0.85)', start: r2(outroStart + 1.25), end: r2(D - 0.12), inDur: 0.6, outDur: 0.8 });
+
+  return { cfg, captions: caps, def };
+}
+
+const API = { makeStoryboard };
+if (typeof module !== 'undefined' && module.exports) module.exports = API;
+else { (typeof window !== 'undefined' ? window : globalThis).CEF =
+  Object.assign((typeof window !== 'undefined' ? window : globalThis).CEF || {}, { storygen: API }); }
+
+})();
+
+/* ---- scene.js ---- */
+;(function(){
+'use strict';
+/*
+ * scene.js — the director. Given a time t (and prebuilt deps), it composites one
+ * full frame: background, board (with camera + move glide), effects and captions.
+ * Pure drawing against a canvas-2D context; used by both the Node renderer and
+ * the in-browser player.
+ */
+function _req(name) {
+  if (typeof require !== 'undefined') return require('./' + name + '.js');
+  const g = (typeof window !== 'undefined' ? window : globalThis).CEF;
+  return g[name];
+}
+const chess = _req('chess');
+const engine = _req('engine');
+const board = _req('board');
+const pieces = _req('pieces');
+const captions = _req('captions');
+const fx = _req('fx');
+const ease = engine.ease;
+
+function smooth(t, a, b) {
+  if (t <= a) return 0;
+  if (t >= b) return 1;
+  return ease.inOutCubic((t - a) / (b - a));
+}
+function decay(t, at, dur) {
+  if (t < at || t > at + dur) return 0;
+  return 1 - (t - at) / dur;
+}
+function endProg(t, start, dur) { return ease.clamp01((t - start) / dur); }
+// The resigning side is the one NOT delivering the final move; find its king.
+function findLosingKingSq(pos, winnerSide) {
+  const loser = winnerSide === 'w' ? 'k' : 'K';
+  for (let i = 0; i < 64; i++) if (pos[i] === loser) return chess.name(i);
+  return null;
+}
+
+function computeBoardState(t, cfg, positions, moves, theme) {
+  const H = theme.board;
+  // The "drop" plays plies dropFromPly..dropToPly (one move for a single-move
+  // mate, several for a sacrifice->mate finish). Back-compatible with dropPly.
+  const dropFrom = cfg.dropFromPly != null ? cfg.dropFromPly : cfg.dropPly;
+  const dropTo = cfg.dropToPly != null ? cfg.dropToPly : cfg.dropPly;
+  const prePly = cfg.prePly != null ? cfg.prePly : dropFrom - 1;
+  const lastMv = moves[dropTo];
+
+  const posBefore = (i) => (i < 0 ? chess.startPosition() : positions[i]);
+  if (t < cfg.settleAt) {
+    if (t < cfg.flurryStart) return { position: posBefore(cfg.flurryFromPly - 1) };
+    if (t <= cfg.flurryEnd) {
+      const { ply, progress } = engine.plyAt(cfg, t);
+      const prePos = posBefore(ply - 1);
+      const mv = moves[ply];
+      return {
+        position: prePos,
+        move: { from: mv.from, to: mv.to, piece: prePos[chess.sq(mv.from)],
+                progress, ease: ease.inOutCubic(progress) },
+        highlight: [[mv.from, H.lastFrom], [mv.to, H.lastTo]],
+      };
+    }
+    return { position: positions[cfg.flurryToPly] };
+  }
+  if (t < cfg.dropAt) {
+    // BRIDGE: fast-forward the moves between the montage and the finish so the
+    // board never teleports — every ply is shown, just quickly.
+    if (cfg.bridgeStart != null && t >= cfg.bridgeStart) {
+      if (t < cfg.bridgeEnd) {
+        const n = cfg.bridgeToPly - cfg.bridgeFromPly + 1;
+        const pos = ((t - cfg.bridgeStart) / (cfg.bridgeEnd - cfg.bridgeStart)) * n;
+        let idx = Math.floor(pos); if (idx >= n) idx = n - 1;
+        const ply = cfg.bridgeFromPly + idx;
+        const progress = ease.clamp01((pos - idx) / 0.62);
+        const prePos = posBefore(ply - 1);
+        const mv = moves[ply];
+        return {
+          position: prePos,
+          move: { from: mv.from, to: mv.to, piece: prePos[chess.sq(mv.from)],
+                  progress, ease: ease.outCubic(progress) },
+          highlight: [[mv.from, H.lastFrom], [mv.to, H.lastTo]],
+        };
+      }
+      // bridge done: sit on the position just before the finish
+    } else if (cfg.bridgeStart != null) {
+      // between the montage settling and the bridge starting
+      return { position: positions[cfg.flurryToPly] };
+    }
+    const sh = cfg.settleHighlight
+      || (moves[dropFrom - 1] ? [moves[dropFrom - 1].from, moves[dropFrom - 1].to] : null);
+    return { position: posBefore(prePly),
+             highlight: sh ? [[sh[0], H.lastFrom], [sh[1], H.lastTo]] : undefined };
+  }
+  if (t < cfg.dropAt + cfg.dropDur) {
+    // weighted dropSchedule when present (the final move holds longest),
+    // else equal slots
+    let ply, progress;
+    if (cfg.dropSchedule && cfg.dropSchedule.length) {
+      let slot = cfg.dropSchedule[0];
+      for (const s of cfg.dropSchedule) { if (t >= s.start) slot = s; else break; }
+      ply = slot.ply;
+      // glide over the first 55% of the slot, then HOLD the landed move —
+      // the held beat is what makes the big moves feel weighty
+      const slotFrac = ease.clamp01((t - slot.start) / (slot.end - slot.start || 1e-6));
+      progress = ease.clamp01(slotFrac / 0.55);
+    } else {
+      const n = dropTo - dropFrom + 1;
+      const frac = (t - cfg.dropAt) / cfg.dropDur;
+      let pos = frac * n; let idx = Math.floor(pos); if (idx >= n) idx = n - 1;
+      ply = dropFrom + idx; progress = pos - idx;
+    }
+    const prePos = posBefore(ply - 1);
+    const mv = moves[ply];
+    return {
+      position: prePos,
+      move: { from: mv.from, to: mv.to, piece: prePos[chess.sq(mv.from)],
+              progress, ease: ease.outCubic(progress), glow: theme.accent, big: true },
+      highlight: [[mv.from, H.lastFrom], [mv.to, H.lastTo]],
+    };
+  }
+  // ---- the ending animation ----
+  // checkmate: the mated king topples (violent). resignation: the LOSING king
+  // topples softly and the board dims to a spotlight on the brilliant move.
+  const endStart = cfg.dropAt + cfg.dropDur;
+  let endAnim = null;
+  if (cfg.mateKingSq) {
+    endAnim = { sq: cfg.mateKingSq, kind: 'mate', progress: endProg(t, endStart + 0.1, 0.75) };
+  } else if (cfg.resign) {
+    const sq = findLosingKingSq(positions[dropTo], moves[dropTo].side);
+    if (sq) endAnim = { sq, kind: 'resign', progress: endProg(t, endStart + 0.2, 1.3) };
+  }
+  return { position: positions[dropTo],
+           highlight: [[lastMv.from, H.lastFrom], [lastMv.to, H.lastTo]],
+           glowSq: cfg.glowSq || lastMv.to, endAnim };
+}
+
+function activeBadges(cfg, t) {
+  if (!cfg.badges) return null;
+  const out = [];
+  for (const b of cfg.badges) {
+    const dur = b.dur || 1.9;
+    if (t < b.at || t > b.at + dur) continue;
+    const inP = ease.outBack(ease.clamp01((t - b.at) / 0.26));
+    const outP = 1 - ease.clamp01((t - (b.at + dur - 0.25)) / 0.25);
+    const scale = Math.max(0, inP * outP);
+    if (scale > 0) out.push({ sq: b.sq, type: b.type, scale });
+  }
+  return out.length ? out : null;
+}
+
+function computeCamera(t, cfg, theme) {
+  const lo = board.layout(theme);
+  const focus = board.centerOf(lo, cfg.focusSq);
+  const cx = theme.W / 2, cy = lo.by + lo.size / 2;
+  const push = smooth(t, cfg.tensionStart, cfg.dropAt);
+  const pull = smooth(t, cfg.mateRevealStart, cfg.mateRevealEnd);
+  let zoom = 1 + 0.34 * push - 0.28 * pull;
+  if (zoom < 1) zoom = 1;
+  // per-move zoom "punch" during the montage — peaks as each move lands, then
+  // relaxes on the hold, giving intensity to every move (not just the finish).
+  if (t >= cfg.flurryStart && t <= cfg.flurryEnd) {
+    const { slotFrac } = engine.plyAt(cfg, t);
+    const glide = cfg.montageGlide != null ? cfg.montageGlide : 0.58;
+    const pulse = slotFrac < glide ? (slotFrac / glide) : 1 - (slotFrac - glide) / (1 - glide);
+    zoom += ease.outCubic(Math.max(0, pulse)) * 0.05;
+  }
+  const fb = push * (1 - pull);
+  let shakeX = 3 * Math.sin(t * 1.3), shakeY = 2 * Math.sin(t * 0.9); // handheld drift
+  const amp = 30 * decay(t, cfg.dropAt, 0.6);
+  shakeX += amp * Math.sin(t * 90);
+  shakeY += amp * Math.cos(t * 77);
+  // scripted dramatic impacts (screen shake) from the storyboard
+  if (cfg.impacts) {
+    for (const im of cfg.impacts) {
+      const a = (im.mag || 0) * decay(t, im.at, im.dur || 0.4);
+      if (a) { shakeX += a * Math.sin(t * 88 + im.at * 7); shakeY += a * Math.cos(t * 73 + im.at * 5); }
+    }
+  }
+  return { zoom, fx: cx + (focus.x - cx) * fb, fy: cy + (focus.y - cy) * fb, shakeX, shakeY };
+}
+
+function drawColdKing(ctx, t, cfg, theme) {
+  const appear = ease.outCubic(ease.clamp01(t / 1.0));
+  const fade = 1 - ease.clamp01((t - (cfg.coldEnd - 0.6)) / 0.6);
+  const cx = theme.W / 2, cy = 980;
+  ctx.save();
+  ctx.globalAlpha = appear * fade;
+  const rad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 440);
+  rad.addColorStop(0, 'rgba(232,182,74,0.32)');
+  rad.addColorStop(1, 'rgba(232,182,74,0)');
+  ctx.fillStyle = rad;
+  ctx.fillRect(cx - 480, cy - 480, 960, 960);
+  pieces.drawPiece(ctx, cfg.coldPiece || 'K', true, cx, cy, 380, theme, { glow: theme.accent, scale: 0.82 + 0.18 * appear });
+  ctx.restore();
+}
+
+function drawWatermark(ctx, theme, brand) {
+  if (!brand || !brand.handle) return;
+  ctx.save();
+  ctx.globalAlpha = 0.36;
+  ctx.fillStyle = theme.text.primary;
+  ctx.font = `600 30px ${theme.fonts.head}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  captions.trackedText(ctx, brand.handle, theme.W / 2, 78, 4, 'center');
+  ctx.textAlign = 'left';
+  ctx.restore();
+}
+
+function drawFrame(ctx, t, deps) {
+  const { theme, story, positions, moves, noise } = deps;
+  const cfg = story.cfg;
+  const frame = Math.round(t * theme.fps);
+
+  fx.drawBackground(ctx, theme, t);
+
+  if (t < cfg.coldEnd) drawColdKing(ctx, t, cfg, theme);
+
+  if (t >= cfg.boardFadeStart) {
+    const bs = computeBoardState(t, cfg, positions, moves, theme);
+    const cam = computeCamera(t, cfg, theme);
+    const op = ease.clamp01((t - cfg.boardFadeStart) / (cfg.boardFadeEnd - cfg.boardFadeStart));
+    ctx.save();
+    ctx.globalAlpha = op;
+    board.drawBoard(ctx, bs.position, theme, {
+      camera: cam, move: bs.move, highlight: bs.highlight,
+      glowSq: bs.glowSq, endAnim: bs.endAnim, badges: activeBadges(cfg, t),
+    });
+    ctx.restore();
+  }
+
+  const vb = cfg.vignetteBase != null ? cfg.vignetteBase : 0.55;
+  const vm = cfg.vignetteMax != null ? cfg.vignetteMax : 0.95;
+  const vig = Math.min(vb + (vm - vb) * smooth(t, cfg.tensionStart, cfg.dropAt), vm);
+  fx.vignette(ctx, theme, vig);
+
+  const lb = 78 * (smooth(t, cfg.tensionStart, cfg.tensionStart + 0.7)
+                   - smooth(t, cfg.fadeStart - 0.4, cfg.fadeStart + 0.3));
+  fx.letterbox(ctx, theme, Math.max(0, lb));
+
+  let fl = Math.max(0.5 * decay(t, cfg.settleAt, 0.22),
+                    (cfg.dropFlash === false ? 0 : 0.9) * decay(t, cfg.dropAt, 0.3));
+  fx.flash(ctx, theme, fl);
+  if (cfg.impacts) {
+    for (const im of cfg.impacts) {
+      if (im.flash) fx.flash(ctx, theme, im.flash * decay(t, im.at, im.flashDur || im.dur || 0.25), im.color);
+    }
+  }
+
+  captions.drawCaptions(ctx, story.captions, t, theme);
+  drawWatermark(ctx, theme, deps.brand);
+
+  fx.drawGrain(ctx, noise, theme, frame, cfg.grainAmount != null ? cfg.grainAmount : 0.05);
+
+  const dur = cfg.duration != null ? cfg.duration : theme.duration;
+  const fade = ease.clamp01((t - cfg.fadeStart) / (dur - cfg.fadeStart));
+  if (fade > 0) {
+    ctx.save(); ctx.globalAlpha = fade; ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, theme.W, theme.H); ctx.restore();
+  }
+}
+
+const API = { drawFrame, computeBoardState, computeCamera };
+if (typeof module !== 'undefined' && module.exports) module.exports = API;
+else { (typeof window !== 'undefined' ? window : globalThis).CEF =
+  Object.assign((typeof window !== 'undefined' ? window : globalThis).CEF || {}, { scene: API }); }
+
+})();
+
+/* ---- browser.js ---- */
+;(function(){
+'use strict';
+/*
+ * browser.js — the in-browser player + one-click exporter. Uses the exact same
+ * scene.drawFrame() as the Node renderer, so the preview matches the video.
+ * Records the canvas to an .mp4 (falls back to .webm) with no installs.
+ */
+(function () {
+  function boot() {
+    const CEF = window.CEF;
+    const theme = CEF.theme;
+    const stage = document.getElementById('stage');
+    stage.width = theme.W; stage.height = theme.H;
+    const ctx = stage.getContext('2d');
+
+    const { positions, moves } = CEF.chess.replay(CEF.game.san);
+    const noise = CEF.fx.makeNoise((w, h) => {
+      const c = document.createElement('canvas'); c.width = w; c.height = h; return c;
+    }, 256);
+    const story = CEF.storygen.makeStoryboard(CEF.def);
+    const deps = { theme, story, positions, moves, noise, brand: CEF.brand };
+    const DUR = story.cfg.duration != null ? story.cfg.duration : theme.duration;
+
+    const statusEl = document.getElementById('status');
+    const setStatus = (s) => { if (statusEl) statusEl.textContent = s; };
+
+    let raf = null;
+    function play(onDone, startPerf) {
+      cancelAnimationFrame(raf);
+      const t0 = (startPerf != null) ? startPerf : performance.now();
+      const step = (now) => {
+        const t = (now - t0) / 1000;
+        if (t >= DUR) { CEF.scene.drawFrame(ctx, DUR - 0.001, deps); if (onDone) onDone(); return; }
+        CEF.scene.drawFrame(ctx, t, deps);
+        raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    }
+
+    function loopPreview() { play(() => setTimeout(loopPreview, 400)); }
+
+    function bestMime() {
+      const opts = [
+        'video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1.42E01E', 'video/mp4',
+        'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm',
+      ];
+      for (const m of opts) { try { if (MediaRecorder.isTypeSupported(m)) return m; } catch (e) {} }
+      return '';
+    }
+
+    async function exportVideo() {
+      cancelAnimationFrame(raf);
+      const btn = document.getElementById('export');
+      btn.disabled = true;
+      const mime = bestMime();
+      const ext = mime.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
+      setStatus('recording… (' + ext.toUpperCase() + ', ~' + DUR + 's — please wait)');
+      const stream = stage.captureStream(30);
+      let rec;
+      try {
+        rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12000000 });
+      } catch (e) {
+        rec = new MediaRecorder(stream);
+      }
+      const chunks = [];
+      rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+      const stopped = new Promise((res) => { rec.onstop = res; });
+      rec.start();
+      await new Promise((res) => play(res));   // play exactly once
+      rec.stop();
+      await stopped;
+      const blob = new Blob(chunks, { type: mime.split(';')[0] || 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'magnus-carlsen-chess-edit.' + ext;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      setStatus('saved magnus-carlsen-chess-edit.' + ext + ' ✓  — add a trending sound in TikTok, drop hits at 13s');
+      btn.disabled = false;
+      loopPreview();
+    }
+
+    document.getElementById('replay').addEventListener('click', loopPreview);
+    document.getElementById('export').addEventListener('click', exportVideo);
+    setStatus('ready — press ▶ Replay to preview, or ⭳ Export to save the video');
+    loopPreview();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+
+})();
+
+</script>
+</body>
+</html>
