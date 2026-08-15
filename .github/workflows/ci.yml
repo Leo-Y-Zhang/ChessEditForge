@@ -27,7 +27,19 @@ jobs:
       # install rather than be stubbed. The lockfile carries the linux-x64-gnu
       # prebuild, so this resolves without a compiler.
       - run: npm ci
-      - run: npm test
+      - name: Test
+        run: npm test 2>&1 | tee test-output.txt; exit ${PIPESTATUS[0]}
+      # The caption-fit checks need Impact, Bahnschrift and Segoe UI, which a
+      # Linux runner does not have, so they skip themselves rather than measure
+      # in a substituted typeface. That is correct, but a green tick must not be
+      # read as "the captions were checked" -- say so in the run summary.
+      - name: Say what was not checked
+        if: always()
+        run: |
+          skipped=$(grep -oP '(?<=^. skipped )\d+' test-output.txt | tail -1)
+          if [ "${skipped:-0}" -gt 0 ]; then
+            echo "::warning::${skipped} test(s) skipped -- the caption-fit checks need the Windows display fonts and cannot run here. They run on the machine that renders."
+          fi
 
   # The gitleaks binary directly rather than gitleaks-action, and the whole
   # history rather than a diff. The action scans only the range
