@@ -15,6 +15,7 @@ const fxMod = require('./fx.js');
 const brand = require('./brand.js');
 const storygen = require('./storygen.js');
 const EDITS = require('./edits.js');
+const fonts = require('./fonts.js');
 
 // Zero the creation/modification timestamps inside the moov box so the exported
 // file carries NO metadata about when/where it was made. Confined to moov (never
@@ -52,6 +53,9 @@ async function renderEdit(editId, opts) {
   const edit = EDITS[editId];
   if (!edit) throw new Error('unknown edit: ' + editId + ' (known: ' + Object.keys(EDITS).join(', ') + ')');
   const theme = require('./' + edit.theme + '.js');
+  // Say so before spending minutes on frames that will not look like the
+  // catalogue. One check here covers render.js, batch.js and rerender.js.
+  fonts.warnIfMissing(theme, editId);
   const game = require('./' + edit.game + '.js');
   const story = storygen.makeStoryboard(edit.def);
 

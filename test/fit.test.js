@@ -5,6 +5,7 @@ const { createCanvas } = require('@napi-rs/canvas');
 const storygen = require('../src/storygen.js');
 const EDITS = require('../src/edits.js');
 const theme = require('../src/theme.js');
+const fonts = require('../src/fonts.js');
 
 // Every caption must fit the frame. captions.js auto-shrinks anything wider
 // than SAFE_W, so overflow is impossible — this test keeps the copy short
@@ -28,30 +29,16 @@ function width(font, text, track) {
   return w;
 }
 
-// The themes ask for Impact, Arial Black, Bahnschrift and Segoe UI, and nothing
-// registers a font file — so the renderer and this test both use whatever the
-// host machine happens to have. On a box without them canvas silently
-// substitutes a fallback, every width comes out different, and this test passes
-// or fails for reasons that have nothing to do with the copy.
+// A fit measured in a typeface that will never be rendered is not a fit. The
+// themes ask for Impact, Arial Black, Bahnschrift and Segoe UI and nothing
+// registers a font file, so on a machine without them canvas silently
+// substitutes a fallback and every width here is meaningless -- some tests then
+// fail and some pass, both for reasons that have nothing to do with the copy.
 //
-// So measure whether the display font resolves at all, by comparing it against
-// a family that certainly does not exist. Equal widths mean both fell back to
-// the same default and the measurement is meaningless. Skipping and saying so
-// is the only honest option: a fit measured in the wrong typeface is not a fit.
-function fontResolves(family) {
-  const probe = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  return Math.abs(
-    width(`100px ${family}`, probe, 0) - width('100px "no-such-family-9d3f1a"', probe, 0)
-  ) > 0.5;
-}
-
-// All three, not just the display face: the kicker uses head and the tag uses
-// body, so one missing family is enough to make a caption's measured width
-// wrong. Checking only the headline font would let a partial install look like
-// a real run.
-const NEEDED = ['display', 'head', 'body']
-  .map((role) => theme.fonts[role].split(',')[0].trim());
-const MISSING = NEEDED.filter((family) => !fontResolves(family));
+// src/fonts.js decides what is present, and the renderer warns from the same
+// module, so the check the test skips on and the check the render warns on
+// cannot drift apart.
+const MISSING = fonts.missing(theme);
 const FONTS_PRESENT = MISSING.length === 0;
 if (!FONTS_PRESENT) {
   console.error(

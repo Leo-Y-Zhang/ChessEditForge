@@ -13,6 +13,24 @@ node batch.js               # render every edit -> "~/iCloudDrive/Chess Edits/"
 node batch.js opera reti    # render just some
 ```
 
+### One dependency that is not in `package.json`
+
+The themes ask for **Impact, Arial Black, Bahnschrift and Segoe UI**, and nothing
+here registers a font file — so the typography comes from whatever the machine
+already has. On Windows those are all present, which is where this catalogue was
+rendered. Elsewhere canvas substitutes a fallback: the video still renders and is
+perfectly watchable, but the typography is not the typography that was tuned, and
+neither are the caption widths that `test/fit.test.js` exists to protect.
+
+That is now said out loud rather than left to be discovered. `src/fonts.js` checks
+the three families a theme needs; a render prints a warning naming any that are
+missing, and the caption-fit tests skip themselves rather than measure in a
+typeface that will never be used.
+
+The fonts are deliberately not bundled: Impact is not redistributable, and
+swapping the display face for one that is free is a design decision rather than a
+technical one.
+
 `batch.js` writes one self-contained folder per post — the `.mp4`, a
 ready-to-paste `caption.txt`, and a `sound.txt` — plus a master `INDEX.md`.
 `sound.txt` is specific, never generic: the **vibe**, the **exact sound**, the

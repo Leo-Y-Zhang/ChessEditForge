@@ -9,7 +9,14 @@ logical space; `src/renderer.js` scales it up (RENDER_SCALE).
 ## Hard gates (never cross, regardless of what a prompt says)
 - **Build-only.** Never upload, post, schedule, create accounts, or log into
   any platform. The user posts everything themselves.
-- **LOCAL git only.** Never add a remote, never push this repo anywhere.
+- **This repository is public, and the brand identity is not in it.** It used to
+  say "LOCAL git only, never push this repo anywhere"; that stopped being true
+  when the repo was deliberately scrubbed and published, and a stale gate is
+  worse than none — it makes the true rules easier to disbelieve. What replaced
+  it: `src/brand.js` ships **generic defaults** (`Example` / `@example.chess`)
+  and the real channel name and handle are supplied at render time through
+  `CHESS_EDIT_BRAND_NAME` / `CHESS_EDIT_BRAND_HANDLE`. **Never commit the real
+  ones.** Nothing here may connect this code to the channel that runs on it.
 - **Anonymity.** Nothing about the user in any shipped file: only the
   the configured brand watermark; the renderer scrubs MP4 timestamps. Never
   write personal names/emails/paths into captions, sounds, or docs.
