@@ -29,7 +29,7 @@ const MODULES = [
 ];
 
 // inject the edit definition so the browser can build the storyboard via storygen
-const defScript = `\n/* ---- edit definition ---- */\n;(function(){var g=(typeof window!=='undefined'?window:globalThis);g.CEF=g.CEF||{};g.CEF.def=${JSON.stringify(edit.def)};})();\n`;
+const defScript = `\n/* ---- edit definition ---- */\n;(function(){var g=(typeof window!=='undefined'?window:globalThis);g.CEF=g.CEF||{};g.CEF.def=${JSON.stringify(edit.def)};g.CEF.editSlug=${JSON.stringify(path.basename(edit.out, '.mp4'))};})();\n`;
 
 const js = defScript + MODULES.map((m) => {
   const code = fs.readFileSync(path.join('src', m + '.js'), 'utf8');

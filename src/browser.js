@@ -19,6 +19,11 @@
     const story = CEF.storygen.makeStoryboard(CEF.def);
     const deps = { theme, story, positions, moves, noise, brand: CEF.brand };
     const DUR = story.cfg.duration != null ? story.cfg.duration : theme.duration;
+    // build.js makes one page per edit, so neither of these may be hardcoded:
+    // the export takes the basename the Node renderer writes, and the drop time
+    // comes from this edit's own storyboard.
+    const SLUG = CEF.editSlug || 'chess-edit';
+    const DROP_AT = Math.round(story.cfg.dropAt);
 
     const statusEl = document.getElementById('status');
     const setStatus = (s) => { if (statusEl) statusEl.textContent = s; };
@@ -71,10 +76,10 @@
       const blob = new Blob(chunks, { type: mime.split(';')[0] || 'video/webm' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'magnus-carlsen-chess-edit.' + ext;
+      a.href = url; a.download = SLUG + '.' + ext;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 4000);
-      setStatus('saved magnus-carlsen-chess-edit.' + ext + ' ✓  — add a trending sound in TikTok, drop hits at 13s');
+      setStatus('saved ' + SLUG + '.' + ext + ' ✓  — add a trending sound in TikTok, drop hits at ' + DROP_AT + 's');
       btn.disabled = false;
       loopPreview();
     }

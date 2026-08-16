@@ -40,7 +40,7 @@
 <script>
 
 /* ---- edit definition ---- */
-;(function(){var g=(typeof window!=='undefined'?window:globalThis);g.CEF=g.CEF||{};g.CEF.def={"coldPiece":"K","accent":"#e8b64a","duration":19,"intro":{"kicker":"WORLD CHAMPIONSHIP · 2016","white":"MAGNUS CARLSEN","black":"SERGEY KARJAKIN","note":"the world title on the line"},"context":"Carlsen – Karjakin  ·  2016","montage":{"fromPly":56,"toPly":71,"keyPlies":[57,64,68]},"bridgeLine":"the suffocation begins…","beats":["world No. 1 for 15 years.","125 games unbeaten.","he doesn't beat you.","he suffocates you."],"tension":"one move.","drop":{"fromPly":98,"toPly":98,"line":"the queen.","mateKingSq":"h7","glowSq":"h6","focusSq":"h6","settleHighlight":["c1","c8"]},"badges":[{"ply":98,"sq":"h6","type":"brilliant"}],"finishKicker":"50. Qh6+  —  a queen sacrifice","factKicker":"world champion · five times","outro":{"title":"MAGNUS CARLSEN","tag":"the machine with a pulse."}};})();
+;(function(){var g=(typeof window!=='undefined'?window:globalThis);g.CEF=g.CEF||{};g.CEF.def={"coldPiece":"K","accent":"#e8b64a","duration":19,"intro":{"kicker":"WORLD CHAMPIONSHIP · 2016","white":"MAGNUS CARLSEN","black":"SERGEY KARJAKIN","note":"the world title on the line"},"context":"Carlsen – Karjakin  ·  2016","montage":{"fromPly":56,"toPly":71,"keyPlies":[57,64,68]},"bridgeLine":"the suffocation begins…","beats":["world No. 1 for 15 years.","125 games unbeaten.","he doesn't beat you.","he suffocates you."],"tension":"one move.","drop":{"fromPly":98,"toPly":98,"line":"the queen.","mateKingSq":"h7","glowSq":"h6","focusSq":"h6","settleHighlight":["c1","c8"]},"badges":[{"ply":98,"sq":"h6","type":"brilliant"}],"finishKicker":"50. Qh6+  —  a queen sacrifice","factKicker":"world champion · five times","outro":{"title":"MAGNUS CARLSEN","tag":"the machine with a pulse."}};g.CEF.editSlug="magnus-carlsen";})();
 
 /* ---- theme.js ---- */
 ;(function(){
@@ -1203,11 +1203,15 @@ else { (typeof window !== 'undefined' ? window : globalThis).CEF =
 'use strict';
 /*
  * brand.js — the channel identity watermarked on every edit.
- * Change `handle` (and `name`) here to rebrand all edits at once.
+ *
+ * Set CHESS_EDIT_BRAND_NAME and CHESS_EDIT_BRAND_HANDLE to rebrand every edit at
+ * once, or edit the defaults below. The defaults are deliberately generic: this
+ * repository is the factory, not any particular channel that runs on it.
  */
+const env = (typeof process !== 'undefined' && process.env) || {};
 const BRAND = {
-  name: 'Example',
-  handle: '@example.chess',
+  name: env.CHESS_EDIT_BRAND_NAME || 'Example',
+  handle: env.CHESS_EDIT_BRAND_HANDLE || '@example.chess',
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = BRAND;
@@ -1724,6 +1728,11 @@ else { (typeof window !== 'undefined' ? window : globalThis).CEF =
     const story = CEF.storygen.makeStoryboard(CEF.def);
     const deps = { theme, story, positions, moves, noise, brand: CEF.brand };
     const DUR = story.cfg.duration != null ? story.cfg.duration : theme.duration;
+    // build.js makes one page per edit, so neither of these may be hardcoded:
+    // the export takes the basename the Node renderer writes, and the drop time
+    // comes from this edit's own storyboard.
+    const SLUG = CEF.editSlug || 'chess-edit';
+    const DROP_AT = Math.round(story.cfg.dropAt);
 
     const statusEl = document.getElementById('status');
     const setStatus = (s) => { if (statusEl) statusEl.textContent = s; };
@@ -1776,10 +1785,10 @@ else { (typeof window !== 'undefined' ? window : globalThis).CEF =
       const blob = new Blob(chunks, { type: mime.split(';')[0] || 'video/webm' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'magnus-carlsen-chess-edit.' + ext;
+      a.href = url; a.download = SLUG + '.' + ext;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 4000);
-      setStatus('saved magnus-carlsen-chess-edit.' + ext + ' ✓  — add a trending sound in TikTok, drop hits at 13s');
+      setStatus('saved ' + SLUG + '.' + ext + ' ✓  — add a trending sound in TikTok, drop hits at ' + DROP_AT + 's');
       btn.disabled = false;
       loopPreview();
     }

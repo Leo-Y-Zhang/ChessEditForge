@@ -40,7 +40,7 @@
 <script>
 
 /* ---- edit definition ---- */
-;(function(){var g=(typeof window!=='undefined'?window:globalThis);g.CEF=g.CEF||{};g.CEF.def={"coldPiece":"B","accent":"#e6b03e","duration":18,"intro":{"kicker":"LONDON · 1851","white":"ADOLF ANDERSSEN","black":"LIONEL KIESERITZKY","note":"a friendly game that became legend"},"context":"Anderssen – Kieseritzky  ·  1851","montage":{"fromPly":20,"toPly":41,"keyPlies":[21,34,37]},"beats":["he threw away a bishop.","then a rook.","then the other rook."],"tension":"almost nothing left.","drop":{"fromPly":42,"toPly":44,"line":"and his QUEEN.","mateKingSq":"d8","glowSq":"e7","focusSq":"e6"},"badges":[{"ply":42,"sq":"f6","type":"brilliant"},{"ply":44,"sq":"e7","type":"mate"}],"finishKicker":"23. Be7#  —  mate with a bishop","factKicker":"down a queen, both rooks & a bishop","outro":{"title":"THE IMMORTAL GAME","tag":"some moves never die."}};})();
+;(function(){var g=(typeof window!=='undefined'?window:globalThis);g.CEF=g.CEF||{};g.CEF.def={"coldPiece":"B","accent":"#e6b03e","duration":18,"intro":{"kicker":"LONDON · 1851","white":"ADOLF ANDERSSEN","black":"LIONEL KIESERITZKY","note":"a friendly game that became legend"},"context":"Anderssen – Kieseritzky  ·  1851","montage":{"fromPly":20,"toPly":41,"keyPlies":[21,34,37]},"beats":["he threw away a bishop.","then a rook.","then the other rook."],"tension":"almost nothing left.","drop":{"fromPly":42,"toPly":44,"line":"and his QUEEN.","mateKingSq":"d8","glowSq":"e7","focusSq":"e6"},"badges":[{"ply":42,"sq":"f6","type":"brilliant"},{"ply":44,"sq":"e7","type":"mate"}],"finishKicker":"23. Be7#  —  mate with a bishop","factKicker":"down a queen, both rooks & a bishop","outro":{"title":"THE IMMORTAL GAME","tag":"some moves never die."}};g.CEF.editSlug="immortal-game";})();
 
 /* ---- theme_immortal.js ---- */
 ;(function(){
@@ -1197,11 +1197,15 @@ else { (typeof window !== 'undefined' ? window : globalThis).CEF =
 'use strict';
 /*
  * brand.js — the channel identity watermarked on every edit.
- * Change `handle` (and `name`) here to rebrand all edits at once.
+ *
+ * Set CHESS_EDIT_BRAND_NAME and CHESS_EDIT_BRAND_HANDLE to rebrand every edit at
+ * once, or edit the defaults below. The defaults are deliberately generic: this
+ * repository is the factory, not any particular channel that runs on it.
  */
+const env = (typeof process !== 'undefined' && process.env) || {};
 const BRAND = {
-  name: 'Example',
-  handle: '@example.chess',
+  name: env.CHESS_EDIT_BRAND_NAME || 'Example',
+  handle: env.CHESS_EDIT_BRAND_HANDLE || '@example.chess',
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = BRAND;
@@ -1718,6 +1722,11 @@ else { (typeof window !== 'undefined' ? window : globalThis).CEF =
     const story = CEF.storygen.makeStoryboard(CEF.def);
     const deps = { theme, story, positions, moves, noise, brand: CEF.brand };
     const DUR = story.cfg.duration != null ? story.cfg.duration : theme.duration;
+    // build.js makes one page per edit, so neither of these may be hardcoded:
+    // the export takes the basename the Node renderer writes, and the drop time
+    // comes from this edit's own storyboard.
+    const SLUG = CEF.editSlug || 'chess-edit';
+    const DROP_AT = Math.round(story.cfg.dropAt);
 
     const statusEl = document.getElementById('status');
     const setStatus = (s) => { if (statusEl) statusEl.textContent = s; };
@@ -1770,10 +1779,10 @@ else { (typeof window !== 'undefined' ? window : globalThis).CEF =
       const blob = new Blob(chunks, { type: mime.split(';')[0] || 'video/webm' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'magnus-carlsen-chess-edit.' + ext;
+      a.href = url; a.download = SLUG + '.' + ext;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 4000);
-      setStatus('saved magnus-carlsen-chess-edit.' + ext + ' ✓  — add a trending sound in TikTok, drop hits at 13s');
+      setStatus('saved ' + SLUG + '.' + ext + ' ✓  — add a trending sound in TikTok, drop hits at ' + DROP_AT + 's');
       btn.disabled = false;
       loopPreview();
     }
