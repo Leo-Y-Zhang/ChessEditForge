@@ -7,11 +7,50 @@ one command to render the whole catalogue into your iCloud folder.
 
 ## Make all the edits → iCloud
 
+Needs **Node 22 or newer** and nothing else — no ffmpeg, no compiler, no system
+package. `npm install` fetches a prebuilt native canvas and a wasm H.264 encoder.
+
 ```bash
 npm install                 # once: headless canvas + wasm H.264 encoder
 node batch.js               # render every edit -> "~/iCloudDrive/Chess Edits/"
 node batch.js opera reti    # render just some
+CHESS_EDITS_DIR=./out node batch.js fools    # somewhere else, one edit
 ```
+
+Rendering is the expensive part, and it is strictly sequential: **one render
+process at a time**, because two 1440x2560 renders in parallel get OS-killed.
+The catalogue is 30 edits of 18–29s each — 45,280 frames — so an argument-less
+`node batch.js` is a job to leave running for hours. Start with a single id.
+Peak resident memory is measured in gigabytes and is not really about the
+output size: a quarter-scale render still peaked near 3.5GB here, so
+`CHESS_RENDER_SCALE` buys you a smaller video, not a smaller footprint. With
+`CHESS_EDITS_DIR` unset the folders go to `~/iCloudDrive/Chess Edits`, which is
+probably not where you want them if you are not the person this was built for.
+
+## Everything you can run without rendering a video
+
+```bash
+npm test                    # 293 tests, about 11s
+npm run build               # rebuild dist/chess-edit.html from src/
+CHESS_EDITS_DIR=./out node batch.js none   # captions, sounds and INDEX.md
+```
+
+That last one is not a special flag: naming an id the catalogue does not have
+writes every post's `caption.txt`, `sound.txt` and the master `INDEX.md` and
+renders no video at all, which is how you refresh the copy after editing it.
+
+`npm test` is the whole gate: the SAN engine replayed against known games, the
+storyboard timings, the audio-collision rules, the catalogue's shape, and the
+caption widths. The 30 caption-fit checks skip themselves where the display
+fonts are missing, so a green run on Linux reads **263 passed, 30 skipped** —
+CI prints a warning saying exactly that, because a green tick there must not be
+read as "the captions were checked".
+
+`dist/chess-edit.html` is committed and opens straight from `file://` — no
+server, no network, no install — so you can watch an edit play and export it
+from the browser without touching the Node renderer. `npm run build`
+regenerates it byte-for-byte from `src/`; `node build.js --edit=<id>` builds a
+different edit's player.
 
 ### One dependency that is not in `package.json`
 
@@ -71,7 +110,8 @@ in `src/edits.js`.
    `npm test` asserts it reaches the real mate).
 2. one entry in `src/edits.js` — theme + game + a compact `def` (intro, montage/drop
    ply windows, badges, copy) + `audio` + `caption`.
-3. `node render.js --edit=<id> --keyframes` to preview, then `node batch.js`.
+3. `node render.js --edit=<id> --keyframes` — a full render into `dist/` that
+   also drops stills in `dist/keyframes-<id>/` to eyeball — then `node batch.js <id>`.
 
 Themes live in `src/theme_*.js`; rebrand everything in `src/brand.js`.
 
