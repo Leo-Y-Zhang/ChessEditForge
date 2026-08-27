@@ -4,6 +4,12 @@ on:
   push:
   pull_request:
 
+# Least privilege: these jobs only ever read the checkout. Declared
+# explicitly so the workflow keeps its own floor even if the repository
+# default token permission is widened later.
+permissions:
+  contents: read
+
 jobs:
   # The suite only. Rendering is deliberately absent: a single 1440x2560@60
   # render parks about ten gigabytes and the repository's own house rules allow
