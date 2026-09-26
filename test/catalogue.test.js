@@ -43,3 +43,19 @@ for (const id of Object.keys(EDITS)) {
     });
   }
 }
+
+// The end card says CHECKMATE unless an edit sets drop.endWord (RESIGNS for
+// the games that ended by resignation). replay() now proves a trailing '#'
+// really is mate, so an edit that keeps the default word must end on one.
+// The featured Carlsen edit is the one deliberate exception: Karjakin resigned
+// after 50.Qh6+ because it forces mate next move, and the card says so.
+const CHECKMATE_WITHOUT_MATE = new Set(['magnus']);
+
+for (const id of Object.keys(EDITS)) {
+  const d = EDITS[id].def;
+  if (d.drop.endWord || CHECKMATE_WITHOUT_MATE.has(id)) continue;
+  test(`${id}: a CHECKMATE end card closes on a mating move`, () => {
+    const game = require('../src/' + EDITS[id].game + '.js');
+    assert.match(game.san[game.san.length - 1], /#$/);
+  });
+}
