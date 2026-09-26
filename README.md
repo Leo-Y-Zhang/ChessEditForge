@@ -30,7 +30,7 @@ probably not where you want them if you are not the person this was built for.
 ## Everything you can run without rendering a video
 
 ```bash
-npm test                    # 311 tests, about 11s
+npm test                    # 326 tests, about 11s
 npm run build               # rebuild dist/chess-edit.html from src/
 CHESS_EDITS_DIR=./out node batch.js none   # captions, sounds and INDEX.md
 ```
@@ -43,7 +43,7 @@ renders no video at all, which is how you refresh the copy after editing it.
 move checked for legality, check and mate signs included), the
 storyboard timings, the audio-collision rules, the catalogue's shape, and the
 caption widths. The 30 caption-fit checks skip themselves where the display
-fonts are missing, so a green run on Linux reads **281 passed, 30 skipped** —
+fonts are missing, so a green run on Linux reads **296 passed, 30 skipped** —
 CI prints a warning saying exactly that, because a green tick there must not be
 read as "the captions were checked".
 
