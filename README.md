@@ -30,7 +30,7 @@ probably not where you want them if you are not the person this was built for.
 ## Everything you can run without rendering a video
 
 ```bash
-npm test                    # 293 tests, about 11s
+npm test                    # 311 tests, about 11s
 npm run build               # rebuild dist/chess-edit.html from src/
 CHESS_EDITS_DIR=./out node batch.js none   # captions, sounds and INDEX.md
 ```
@@ -39,10 +39,11 @@ That last one is not a special flag: naming an id the catalogue does not have
 writes every post's `caption.txt`, `sound.txt` and the master `INDEX.md` and
 renders no video at all, which is how you refresh the copy after editing it.
 
-`npm test` is the whole gate: the SAN engine replayed against known games, the
+`npm test` is the whole gate: the SAN engine replayed against known games (every
+move checked for legality, check and mate signs included), the
 storyboard timings, the audio-collision rules, the catalogue's shape, and the
 caption widths. The 30 caption-fit checks skip themselves where the display
-fonts are missing, so a green run on Linux reads **263 passed, 30 skipped** —
+fonts are missing, so a green run on Linux reads **281 passed, 30 skipped** —
 CI prints a warning saying exactly that, because a green tick there must not be
 read as "the captions were checked".
 
@@ -106,8 +107,9 @@ in `src/edits.js`.
 
 ## Add a new edit
 
-1. `src/game_<id>.js` — the game as a verified SAN move list (the engine replays it;
-   `npm test` asserts it reaches the real mate).
+1. `src/game_<id>.js` — the game as a verified SAN move list (the engine replays it
+   and refuses an illegal move, a missing or wrong `x`, or a `+`/`#` that does not
+   match the board; `npm test` asserts it reaches the real mate).
 2. one entry in `src/edits.js` — theme + game + a compact `def` (intro, montage/drop
    ply windows, badges, copy) + `audio` + `caption`.
 3. `node render.js --edit=<id> --keyframes` — a full render into `dist/` that
