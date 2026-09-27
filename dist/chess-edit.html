@@ -182,9 +182,10 @@ else { (typeof window !== 'undefined' ? window : globalThis).CEF =
  * screen) and file 0 = a-file (left). So 'a8' = 0, 'h8' = 7, 'a1' = 56, 'h1' = 63.
  * Pieces: 'P N B R Q K' = white, lowercase = black, null = empty.
  *
- * This is NOT a full legal-move engine. It resolves standard-algebraic (SAN)
- * moves against a position well enough to replay a real, already-legal game,
- * with a pin/check filter used only to break disambiguation ties.
+ * It resolves standard-algebraic (SAN) moves against a position and refuses
+ * anything that is not a legal move (castling rights and en passant included
+ * when replay() supplies the game state), so a mistyped game fails loudly
+ * instead of rendering an impossible move.
  */
 
 function sq(nameStr) {
@@ -251,27 +252,31 @@ function canReach(board, from, to, type) {
   }
 }
 
-// Is `color`'s king attacked in this position? Used only to break SAN ties.
-function isInCheck(board, color) {
-  const king = color === 'w' ? 'K' : 'k';
-  let kIdx = -1;
-  for (let i = 0; i < 64; i++) if (board[i] === king) { kIdx = i; break; }
-  if (kIdx < 0) return false;
-  const kr = Math.floor(kIdx / 8), kf = kIdx % 8;
+// Is square `idx` attacked by any piece of `byColor`?
+function isAttacked(board, idx, byColor) {
+  const kr = Math.floor(idx / 8), kf = idx % 8;
   for (let i = 0; i < 64; i++) {
     const p = board[i];
-    if (p == null || colorOf(p) === color) continue;
+    if (p == null || colorOf(p) !== byColor) continue;
     const type = p.toUpperCase();
     if (type === 'P') {
-      // pawn attacks toward the king square
+      // pawn attacks toward the target square
       const r = Math.floor(i / 8), f = i % 8;
       const dir = isWhitePiece(p) ? -1 : 1; // white attacks up (row-1)
       if (r + dir === kr && Math.abs(f - kf) === 1) return true;
-    } else if (canReach(board, i, kIdx, type)) {
+    } else if (canReach(board, i, idx, type)) {
       return true;
     }
   }
   return false;
+}
+
+// Is `color`'s king attacked in this position?
+function isInCheck(board, color) {
+  const king = color === 'w' ? 'K' : 'k';
+  const kIdx = board.indexOf(king);
+  if (kIdx < 0) return false;
+  return isAttacked(board, kIdx, color === 'w' ? 'b' : 'w');
 }
 
 function applyMove(board, move) {
@@ -310,114 +315,197 @@ function applyMove(board, move) {
   return b;
 }
 
-function resolveSan(board, sanRaw, side) {
+// Game state a bare board cannot carry. `castling` holds the rights still
+// available ('KQkq' subset); `ep` is the square a pawn has just passed over
+// (index) or null. replay() keeps one up to date; a caller without history
+// may omit it, and then castling is judged on the board alone and an en
+// passant capture is allowed wherever an enemy pawn stands beside the target.
+function initialState() {
+  return { castling: 'KQkq', ep: null };
+}
+
+const RESULT = /^(1-0|0-1|1\/2-1\/2|\*)$/;
+const SAN_PIECE = /^([KQRBN])([a-h])?([1-8])?(x)?([a-h][1-8])$/;
+const SAN_PAWN = /^([a-h])(?:x([a-h]))?([1-8])(?:=([QRBNqrbn])|([QRBNqrbn]))?$/;
+
+function fail(sanRaw, why) {
+  throw new Error(`resolveSan: ${sanRaw} -> ${why}`);
+}
+
+// Is the pawn move from -> to (both indices) possible for `side`, ignoring
+// whether it leaves the king in check?
+function pawnCanMove(board, from, to, side, state) {
   const white = side === 'w';
-  let s = sanRaw.replace(/[+#!?]/g, '').trim();
-
-  // Castling
-  if (s === 'O-O' || s === '0-0') {
-    return { from: white ? 'e1' : 'e8', to: white ? 'g1' : 'g8' };
+  if (board[from] !== (white ? 'P' : 'p')) return false;
+  const fr = Math.floor(from / 8), ff = from % 8;
+  const tr = Math.floor(to / 8), tf = to % 8;
+  const dir = white ? -1 : 1;
+  if (tf === ff) {
+    if (board[to] != null) return false;
+    if (tr === fr + dir) return true;
+    const startRow = white ? 6 : 1;
+    return fr === startRow && tr === fr + 2 * dir && board[(fr + dir) * 8 + ff] == null;
   }
-  if (s === 'O-O-O' || s === '0-0-0') {
-    return { from: white ? 'e1' : 'e8', to: white ? 'c1' : 'c8' };
+  if (Math.abs(tf - ff) !== 1 || tr !== fr + dir) return false;
+  if (board[to] != null) return colorOf(board[to]) !== side;
+  // en passant: the captured pawn stands beside the mover, on the target file
+  const passed = board[fr * 8 + tf];
+  if (passed !== (white ? 'p' : 'P') || fr !== (white ? 3 : 4)) return false;
+  return !state || state.ep === to;
+}
+
+// Can `side` legally move the piece on `from` to `to` (castling aside)?
+function isLegal(board, from, to, side, state, promo) {
+  const p = board[from];
+  if (p == null || colorOf(p) !== side) return false;
+  if (board[to] != null && colorOf(board[to]) === side) return false;
+  const type = p.toUpperCase();
+  if (type === 'P' ? !pawnCanMove(board, from, to, side, state)
+                   : !canReach(board, from, to, type)) return false;
+  return !isInCheck(applyMove(board, { from: name(from), to: name(to), promo }), side);
+}
+
+// Does `side` have any legal move at all? (Castling never escapes check, so
+// it is not needed to tell mate from check.)
+function hasLegalMove(board, side, state) {
+  for (let from = 0; from < 64; from++) {
+    if (board[from] == null || colorOf(board[from]) !== side) continue;
+    for (let to = 0; to < 64; to++) {
+      const promo = board[from].toUpperCase() === 'P' && (to < 8 || to > 55) ? 'Q' : null;
+      if (to !== from && isLegal(board, from, to, side, state, promo)) return true;
+    }
   }
+  return false;
+}
 
-  // Promotion suffix
-  let promo = null;
-  const pm = s.match(/=([QRBN])$/);
-  if (pm) { promo = pm[1]; s = s.slice(0, -2); }
+function resolveCastle(board, sanRaw, side, state, long) {
+  const white = side === 'w';
+  const row = white ? 7 : 0;
+  const enemy = white ? 'b' : 'w';
+  const right = long ? (white ? 'Q' : 'q') : (white ? 'K' : 'k');
+  if (state && !state.castling.includes(right)) fail(sanRaw, 'castling right already lost');
+  if (board[row * 8 + 4] !== (white ? 'K' : 'k') ||
+      board[row * 8 + (long ? 0 : 7)] !== (white ? 'R' : 'r')) {
+    fail(sanRaw, 'king or rook not on its home square');
+  }
+  const between = long ? [1, 2, 3] : [5, 6];
+  if (between.some((f) => board[row * 8 + f] != null)) fail(sanRaw, 'pieces between king and rook');
+  const kingPath = long ? [4, 3, 2] : [4, 5, 6];
+  if (kingPath.some((f) => isAttacked(board, row * 8 + f, enemy))) {
+    fail(sanRaw, 'king would castle out of, through or into check');
+  }
+  const home = white ? 'e1' : 'e8';
+  return { from: home, to: (long ? 'c' : 'g') + home[1] };
+}
 
-  const capture = s.includes('x');
-  s = s.replace('x', '');
+// Resolve a SAN move for `side` on `board` to {from, to, promo}. Throws unless
+// the SAN names exactly one legal move, and unless its capture sign matches
+// the board. Check and mate signs are ignored here (replay checks them).
+function resolveSan(board, sanRaw, side, state) {
+  const white = side === 'w';
+  const s = String(sanRaw).trim().replace(/[+#]?[!?]*$/, '');
 
-  let type, rest;
-  if ('KQRBN'.includes(s[0])) { type = s[0]; rest = s.slice(1); }
-  else { type = 'P'; rest = s; }
+  if (s === 'O-O' || s === '0-0') return resolveCastle(board, sanRaw, side, state, false);
+  if (s === 'O-O-O' || s === '0-0-0') return resolveCastle(board, sanRaw, side, state, true);
 
-  const toName = rest.slice(-2);
-  const disamb = rest.slice(0, -2); // '', file, rank, or file+rank
-  const to = sq(toName);
-  const toR = Math.floor(to / 8), toF = to % 8;
-
-  if (type === 'P') {
+  const pm = s.match(SAN_PAWN);
+  if (pm) {
+    const [, srcFile, capFile, rankCh, promoEq, promoBare] = pm;
+    const promo = (promoEq || promoBare || '').toUpperCase() || null;
+    const toName = (capFile || srcFile) + rankCh;
+    const to = sq(toName);
+    const toR = Math.floor(to / 8);
+    const lastRow = white ? 0 : 7;
+    if ((toR === lastRow) !== (promo != null)) {
+      fail(sanRaw, promo ? 'promotion before the last rank' : 'a pawn on the last rank must promote');
+    }
+    const back = white ? 1 : -1;
     let from;
-    if (capture) {
-      const srcFile = disamb.charCodeAt(0) - 97;
-      const srcRow = white ? toR + 1 : toR - 1;
-      from = srcRow * 8 + srcFile;
+    if (capFile) {
+      from = (toR + back) * 8 + (srcFile.charCodeAt(0) - 97);
     } else {
-      const oneR = white ? toR + 1 : toR - 1;
-      const pawn = white ? 'P' : 'p';
-      if (board[oneR * 8 + toF] === pawn) {
-        from = oneR * 8 + toF;
-      } else {
-        const twoR = white ? toR + 2 : toR - 2;
-        from = twoR * 8 + toF; // double push
-      }
+      const one = (toR + back) * 8 + (to % 8);
+      from = board[one] === (white ? 'P' : 'p') ? one : (toR + 2 * back) * 8 + (to % 8);
+    }
+    if (from < 0 || from > 63 || board[from] !== (white ? 'P' : 'p') ||
+        !isLegal(board, from, to, side, state, promo)) {
+      fail(sanRaw, 'not a legal pawn move');
     }
     return { from: name(from), to: toName, promo };
   }
 
-  // Piece move: gather candidates of the right type/color that can reach `to`.
+  const m = s.match(SAN_PIECE);
+  if (!m) fail(sanRaw, 'unreadable SAN');
+  const [, type, fileCh, rankCh, capture, toName] = m;
+  const to = sq(toName);
   const want = white ? type : type.toLowerCase();
-  let candidates = [];
+  const candidates = [];
   for (let i = 0; i < 64; i++) {
     if (board[i] !== want) continue;
-    if (canReach(board, i, to, type)) candidates.push(i);
+    if (fileCh && i % 8 !== fileCh.charCodeAt(0) - 97) continue;
+    if (rankCh && Math.floor(i / 8) !== 8 - Number(rankCh)) continue;
+    if (isLegal(board, i, to, side, state, null)) candidates.push(i);
   }
-
-  // Disambiguation by given file and/or rank.
-  if (disamb) {
-    for (const ch of disamb) {
-      if (ch >= 'a' && ch <= 'h') {
-        const f = ch.charCodeAt(0) - 97;
-        candidates = candidates.filter((i) => i % 8 === f);
-      } else if (ch >= '1' && ch <= '8') {
-        const r = 8 - Number(ch);
-        candidates = candidates.filter((i) => Math.floor(i / 8) === r);
-      }
-    }
+  if (candidates.length !== 1) fail(sanRaw, `${candidates.length} candidates`);
+  if (!!capture !== (board[to] != null)) {
+    fail(sanRaw, capture ? 'nothing to capture there' : 'a capture written without x');
   }
-
-  // Tie-break by legality (pinned pieces can't actually make the move).
-  if (candidates.length > 1) {
-    const legal = candidates.filter((i) => {
-      const b2 = applyMove(board, { from: name(i), to: toName, promo });
-      return !isInCheck(b2, side);
-    });
-    if (legal.length >= 1) candidates = legal;
-  }
-
-  if (candidates.length !== 1) {
-    throw new Error(`resolveSan: ${sanRaw} -> ${candidates.length} candidates`);
-  }
-  return { from: name(candidates[0]), to: toName, promo };
+  return { from: name(candidates[0]), to: toName, promo: null };
 }
 
-function applySan(board, san, side) {
-  return applyMove(board, resolveSan(board, san, side));
+function applySan(board, san, side, state) {
+  return applyMove(board, resolveSan(board, san, side, state));
 }
 
-// Replay a SAN list from the start position (skips result tokens like "1-0").
+// Rights and en-passant square after `mv` (already resolved) is played.
+function nextState(board, mv, state) {
+  let castling = state.castling;
+  for (const sqName of [mv.from, mv.to]) {
+    const drop = { e1: 'KQ', h1: 'K', a1: 'Q', e8: 'kq', h8: 'k', a8: 'q' }[sqName];
+    if (drop) castling = castling.split('').filter((c) => !drop.includes(c)).join('');
+  }
+  const from = sq(mv.from), to = sq(mv.to);
+  const doublePush = board[from] != null && board[from].toUpperCase() === 'P' &&
+    Math.abs(Math.floor(to / 8) - Math.floor(from / 8)) === 2;
+  return { castling, ep: doublePush ? (from + to) / 2 : null };
+}
+
+// Replay a SAN list from the start position. Every move must be legal, and a
+// check or mate sign must match the position it produces. A result token
+// ("1-0", "0-1", "1/2-1/2", "*") may close the list and is skipped.
 function replay(sans) {
   let board = startPosition();
+  let state = initialState();
   const positions = [];
   const moves = [];
   let side = 'w';
-  for (const raw of sans) {
-    if (/^(1-0|0-1|1\/2-1\/2|\*)$/.test(raw.trim())) continue;
-    const mv = resolveSan(board, raw, side);
-    board = applyMove(board, mv);
+  sans.forEach((raw, i) => {
+    if (RESULT.test(raw.trim())) {
+      if (i !== sans.length - 1) throw new Error(`replay: result ${raw} before the last move`);
+      return;
+    }
+    const mv = resolveSan(board, raw, side, state);
+    const next = applyMove(board, mv);
+    state = nextState(board, mv, state);
+    board = next;
+    const other = side === 'w' ? 'b' : 'w';
+    const sign = (raw.trim().match(/([+#]?)[!?]*$/) || ['', ''])[1];
+    const check = isInCheck(board, other);
+    const mate = check && !hasLegalMove(board, other, state);
+    const want = mate ? '#' : check ? '+' : '';
+    if (sign !== want) {
+      throw new Error(`resolveSan: ${raw} -> the move gives ${mate ? 'mate' : check ? 'check' : 'no check'}`);
+    }
     positions.push(board);
     moves.push({ from: mv.from, to: mv.to, san: raw, side, promo: mv.promo || null });
-    side = side === 'w' ? 'b' : 'w';
-  }
+    side = other;
+  });
   return { positions, moves };
 }
 
 const API = {
   sq, name, emptyBoard, startPosition, applyMove, resolveSan, applySan, replay,
-  isInCheck, colorOf, isWhitePiece,
+  isInCheck, isAttacked, colorOf, isWhitePiece,
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
