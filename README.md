@@ -30,20 +30,21 @@ probably not where you want them if you are not the person this was built for.
 ## Everything you can run without rendering a video
 
 ```bash
-npm test                    # 326 tests, about 11s
+npm test                    # 395 tests, about 11s
 npm run build               # rebuild dist/chess-edit.html from src/
-CHESS_EDITS_DIR=./out node batch.js none   # captions, sounds and INDEX.md
+CHESS_EDITS_DIR=./out node batch.js none   # captions, sounds, scripts and INDEX.md
 ```
 
 That last one is not a special flag: naming an id the catalogue does not have
-writes every post's `caption.txt`, `sound.txt` and the master `INDEX.md` and
+writes every post's `caption.txt`, `sound.txt`, `narration.txt`, `cuts.txt` and the
+master `INDEX.md` and
 renders no video at all, which is how you refresh the copy after editing it.
 
 `npm test` is the whole gate: the SAN engine replayed against known games (every
 move checked for legality, check and mate signs included), the
 storyboard timings, the audio-collision rules, the catalogue's shape, and the
 caption widths. The 30 caption-fit checks skip themselves where the display
-fonts are missing, so a green run on Linux reads **296 passed, 30 skipped** —
+fonts are missing, so a green run on Linux reads **365 passed, 30 skipped** —
 CI prints a warning saying exactly that, because a green tick there must not be
 read as "the captions were checked".
 
@@ -72,10 +73,25 @@ swapping the display face for one that is free is a design decision rather than 
 technical one.
 
 `batch.js` writes one self-contained folder per post — the `.mp4`, a
-ready-to-paste `caption.txt`, and a `sound.txt` — plus a master `INDEX.md`.
+ready-to-paste `caption.txt`, a `sound.txt`, a `narration.txt` and a `cuts.txt` —
+plus a master `INDEX.md`.
 `sound.txt` is specific, never generic: the **vibe**, the **exact sound**, the
 **exact search string** to type into TikTok's sound search, a **backup**, and
 a **sync** note saying which on-screen move the drop should land on.
+
+`narration.txt` and `cuts.txt` come from the same storyboard the renderer draws, so
+they always match the picture (`src/script.js`, locked by `test/script.test.js`).
+`narration.txt` gives each spoken line and the moment it starts, for TikTok's built-in
+text-to-speech: chess notation is read out as words ("rook takes d4"), and a line that
+would run into the next one is shortened or left to the on-screen text. `cuts.txt` lists
+the beat-cut moments (the name slams, the board reveal, each beat line and badge, the
+drop, the last move landing, the finish and the outro) to the hundredth of a second.
+
+The board is drawn in a 3D style by default: a tilted perspective, upright pieces with
+contact shadows, and a camera angle that sweeps down at the reveal, drops through the
+tension push and rises for the finish (`src/board.js`, `computeCamera` in
+`src/scene.js`). `def.tilt3d = false` keeps an edit flat; `node tools/frames.js <id>`
+renders five still frames for a quick look without encoding a video.
 
 **Posting:** upload the `.mp4` to TikTok → search the sound.txt string → add
 the Sound → line its drop up per the sync note. Silent by design (ride
