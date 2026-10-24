@@ -69,7 +69,7 @@ function writeMeta(row) {
 }
 
 function writeIndex(rows) {
-  let md = `# Chess Edits — posting plan\n\n_${BRAND.name} (${BRAND.handle}). Each folder below is one ready-to-post video: the .mp4, its caption.txt, and sound.txt._\n\n`;
+  let md = `# Chess Edits — posting plan\n\n_${BRAND.name} (${BRAND.handle}). Each folder below is one ready-to-post video: the .mp4, caption.txt, sound.txt, narration.txt (text-to-speech lines) and cuts.txt (beat-cut times)._\n\n`;
   let cat = '';
   for (const r of rows) {
     if (r.cat !== cat) { cat = r.cat; md += `\n## ${cat}\n\n`; }
