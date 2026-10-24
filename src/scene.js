@@ -174,7 +174,21 @@ function computeCamera(t, cfg, theme) {
       if (a) { shakeX += a * Math.sin(t * 88 + im.at * 7); shakeY += a * Math.cos(t * 73 + im.at * 5); }
     }
   }
-  return { zoom, fx: cx + (focus.x - cx) * fb, fy: cy + (focus.y - cy) * fb, shakeX, shakeY };
+  // 3D-style camera angle: sweeps down from a low angle as the board appears, drops lower
+  // through the tension push, then rises to show the finish clearly. null = flat board.
+  let tilt = 0;
+  const t3 = cfg.tilt3d;
+  if (t3) {
+    const base = t3.base != null ? t3.base : 0.5;
+    const low = t3.low != null ? t3.low : 0.82;
+    const top = t3.top != null ? t3.top : 0.3;
+    const reveal = smooth(t, cfg.boardFadeStart, cfg.boardFadeEnd + 1.2);
+    tilt = low + (base - low) * reveal;
+    tilt += (low - base) * 0.55 * push;
+    tilt += (top - tilt) * pull;
+  }
+  const f = tilt ? board.project(lo, tilt, focus.x, focus.y) : focus;
+  return { zoom, fx: cx + (f.x - cx) * fb, fy: cy + (f.y - cy) * fb, shakeX, shakeY, tilt };
 }
 
 function drawColdKing(ctx, t, cfg, theme) {

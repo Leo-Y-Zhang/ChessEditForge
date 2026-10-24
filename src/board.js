@@ -142,8 +142,177 @@ function drawCoords(ctx, lo, theme) {
   ctx.textAlign = 'left';
 }
 
+// ---- 3D-style board ---------------------------------------------------------------
+// The board plane tilts away from the viewer about its middle (tilt in radians; 0 is the
+// classic top-down board). A pinhole camera EYE px away projects every point, so squares
+// become trapezoids and far ranks shrink; pieces stand upright, scaled by depth, on soft
+// contact shadows. Flat effects (glows, rings, coordinates) are drawn "on" the board with
+// a local squash that matches the plane at their position.
+const EYE = 2600;
+
+function projector(lo, tilt) {
+  const cx = lo.bx + lo.size / 2, cy = lo.by + lo.size / 2;
+  const c = Math.cos(tilt || 0), sn = Math.sin(tilt || 0);
+  const half = lo.size / 2;
+  const sNear = EYE / (EYE - half * sn);   // the near edge keeps its flat width...
+  const drop = half * (1 - c);             // ...and its flat height on screen
+  return {
+    c, cx, cy,
+    p(x, y) {
+      const v = y - cy, s = EYE / (EYE - v * sn) / sNear;   // far ranks (v < 0) recede
+      return { x: cx + (x - cx) * s, y: cy + v * c * s + drop, s };
+    },
+  };
+}
+
+function project(lo, tilt, x, y) {
+  return projector(lo, tilt).p(x, y);
+}
+
+// draw fn() in flat board coordinates around (x, y), squashed onto the tilted plane
+function onPlane(ctx, P, x, y, fn) {
+  const q = P.p(x, y);
+  ctx.save();
+  ctx.translate(q.x, q.y);
+  ctx.scale(q.s, q.s * P.c);
+  ctx.translate(-x, -y);
+  fn();
+  ctx.restore();
+}
+
+function quad(ctx, P, x0, y0, x1, y1) {
+  const a = P.p(x0, y0), b = P.p(x1, y0), c = P.p(x1, y1), d = P.p(x0, y1);
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y);
+  ctx.closePath();
+  return { a, b, c, d };
+}
+
+function drawBoard3D(ctx, position, theme, opts, lo, P) {
+  const m = 22;
+  // the slab: a front face under the near edge gives the board thickness
+  const near = quad(ctx, P, lo.bx - m, lo.by - m, lo.bx + lo.size + m, lo.by + lo.size + m);
+  const depth = lo.cs * 0.34 * near.d.s;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(near.d.x, near.d.y); ctx.lineTo(near.c.x, near.c.y);
+  ctx.lineTo(near.c.x, near.c.y + depth); ctx.lineTo(near.d.x, near.d.y + depth);
+  ctx.closePath();
+  ctx.fillStyle = theme.board.frameDark;
+  ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18;
+  ctx.fill();
+  ctx.restore();
+  const g = ctx.createLinearGradient(0, near.a.y, 0, near.d.y);
+  g.addColorStop(0, theme.board.frame);
+  g.addColorStop(1, theme.board.frameDark);
+  quad(ctx, P, lo.bx - m, lo.by - m, lo.bx + lo.size + m, lo.by + lo.size + m);
+  ctx.fillStyle = g; ctx.fill();
+  quad(ctx, P, lo.bx - 6, lo.by - 6, lo.bx + lo.size + 6, lo.by + lo.size + 6);
+  ctx.fillStyle = '#05070b'; ctx.fill();
+
+  for (let i = 0; i < 64; i++) {
+    const row = i >> 3, file = i % 8;
+    const x = lo.bx + file * lo.cs, y = lo.by + row * lo.cs;
+    quad(ctx, P, x, y, x + lo.cs, y + lo.cs);
+    ctx.fillStyle = (row + file) % 2 === 0 ? theme.board.light : theme.board.dark;
+    ctx.fill();
+  }
+  if (opts.highlight) {
+    for (const [sqName, col] of opts.highlight) {
+      const file = sqName.charCodeAt(0) - 97, row = 8 - Number(sqName[1]);
+      const x = lo.bx + file * lo.cs, y = lo.by + row * lo.cs;
+      quad(ctx, P, x, y, x + lo.cs, y + lo.cs);
+      ctx.fillStyle = col; ctx.fill();
+    }
+  }
+  onPlane(ctx, P, lo.bx + lo.size / 2, lo.by + lo.size / 2, () => drawCoords(ctx, lo, theme));
+
+  if (opts.glowSq) {
+    const c = centerOf(lo, opts.glowSq);
+    onPlane(ctx, P, c.x, c.y, () => {
+      const rad = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, lo.cs * 1.4);
+      rad.addColorStop(0, 'rgba(232,182,74,0.55)');
+      rad.addColorStop(1, 'rgba(232,182,74,0)');
+      ctx.fillStyle = rad;
+      ctx.fillRect(c.x - lo.cs * 1.6, c.y - lo.cs * 1.6, lo.cs * 3.2, lo.cs * 3.2);
+    });
+  }
+
+  // a standing piece: base a little toward the near edge of its square, size by depth
+  const stand = (type, isWhite, x, y, o, lift) => {
+    const base = P.p(x, y + lo.cs * 0.22);
+    const cell = lo.cs * base.s * 1.06;
+    ctx.save();
+    ctx.globalAlpha *= 0.42 * (1 - Math.min(1, (lift || 0) / (lo.cs * 0.6)));
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(base.x, base.y, cell * 0.36, cell * 0.36 * P.c * 0.42, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    _pieces.drawPiece(ctx, type, isWhite, base.x, base.y - cell * 0.44 - (lift || 0) * base.s, cell, theme, o);
+  };
+
+  const skipFrom = opts.move ? opts.move.from : null;
+  const captureSq = opts.move && opts.move.progress < 1 ? opts.move.to : null;
+  for (let i = 0; i < 64; i++) {          // rank 8 first: far pieces behind near ones
+    const p = position[i];
+    if (!p) continue;
+    const sqName = String.fromCharCode(97 + (i % 8)) + (8 - (i >> 3));
+    if (sqName === skipFrom) continue;
+    const isWhite = p === p.toUpperCase();
+    const c = centerOf(lo, sqName);
+    const o = {};
+    if (opts.endAnim && opts.endAnim.sq === sqName) {
+      o.topple = opts.endAnim.progress; o.toppleKind = opts.endAnim.kind;
+      if (opts.endAnim.kind === 'mate') o.glow = 'rgba(230,78,60,0.92)';
+    }
+    if (sqName === captureSq) {
+      ctx.save();
+      ctx.globalAlpha = 1 - opts.move.progress;
+      stand(p.toUpperCase(), isWhite, c.x, c.y, o);
+      ctx.restore();
+      continue;
+    }
+    stand(p.toUpperCase(), isWhite, c.x, c.y, o);
+  }
+
+  if (opts.move) {
+    const mv = opts.move;
+    const a = centerOf(lo, mv.from), b = centerOf(lo, mv.to);
+    const t = mv.ease == null ? mv.progress : mv.ease;
+    const x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t;
+    const lift = Math.sin(Math.min(t, 1) * Math.PI) * lo.cs * 0.32;   // a higher arc reads in 3D
+    if (mv.progress > 0.7) {
+      const k = (mv.progress - 0.7) / 0.3;
+      const big = mv.big ? 2.0 : 1.0;
+      onPlane(ctx, P, b.x, b.y, () => drawShock(ctx, b.x, b.y, lo.cs * (0.28 + k * 0.9 * big),
+        (1 - k) * (mv.big ? 0.75 : 0.4), mv.glow || theme.accent));
+    }
+    stand(mv.piece.toUpperCase(), mv.piece === mv.piece.toUpperCase(), x, y, { glow: mv.glow }, lift);
+  }
+
+  if (opts.endAnim) {
+    const fx = opts.endAnim.kind === 'mate' ? centerOf(lo, opts.endAnim.sq)
+      : (opts.glowSq ? centerOf(lo, opts.glowSq) : { x: lo.bx + lo.size / 2, y: lo.by + lo.size / 2 });
+    onPlane(ctx, P, fx.x, fx.y, () => drawEndFx(ctx, lo, opts.endAnim, opts.glowSq));
+  }
+
+  // badges float upright beside the standing piece's head
+  if (opts.badges) {
+    for (const bd of opts.badges) {
+      const c = centerOf(lo, bd.sq);
+      const q = P.p(c.x, c.y + lo.cs * 0.22);
+      const r = lo.cs * 0.30 * q.s * (bd.scale == null ? 1 : bd.scale);
+      const flat = { bx: 0, by: 0, cs: r / 0.30 };
+      // drawBadge places the badge at (0.82, 0.18) of a square; aim that at the head
+      const hx = q.x + lo.cs * q.s * 0.34 - flat.cs * 0.82, hy = q.y - lo.cs * q.s * 1.02 - flat.cs * 0.18;
+      drawBadge(ctx, { bx: hx, by: hy, cs: flat.cs }, 'a8', bd.type, 1);
+    }
+  }
+}
+
 // opts: { move:{from,to,side,progress}, highlight:[[sq,color]], glowSq, toppleSq,
-//         camera:{zoom, fx, fy, shakeX, shakeY} }
+//         camera:{zoom, fx, fy, shakeX, shakeY, tilt} }
 function drawBoard(ctx, position, theme, opts) {
   opts = opts || {};
   const lo = opts.layout || layout(theme);
@@ -157,6 +326,12 @@ function drawBoard(ctx, position, theme, opts) {
     ctx.translate(cx, cy);
     ctx.scale(cam.zoom || 1, cam.zoom || 1);
     ctx.translate(-cx, -cy);
+  }
+
+  if (cam && cam.tilt) {
+    drawBoard3D(ctx, position, theme, opts, lo, projector(lo, cam.tilt));
+    ctx.restore();
+    return;
   }
 
   drawFrame(ctx, lo, theme);
@@ -234,7 +409,7 @@ function drawBoard(ctx, position, theme, opts) {
   ctx.restore();
 }
 
-const API = { layout, centerOf, drawBoard };
+const API = { layout, centerOf, drawBoard, project };
 if (typeof module !== 'undefined' && module.exports) module.exports = API;
 else { (typeof window !== 'undefined' ? window : globalThis).CEF =
   Object.assign((typeof window !== 'undefined' ? window : globalThis).CEF || {}, { board: API }); }

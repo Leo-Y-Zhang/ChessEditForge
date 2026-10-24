@@ -17,6 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const { renderEdit, EDITS } = require('./src/renderer.js');
 const BRAND = require('./src/brand.js');
+const script = require('./src/script.js');
 
 const OUT = process.env.CHESS_EDITS_DIR || path.join(require('os').homedir(), 'iCloudDrive', 'Chess Edits');
 
@@ -63,10 +64,12 @@ function writeMeta(row) {
   fs.mkdirSync(row.folder, { recursive: true });
   fs.writeFileSync(path.join(row.folder, 'caption.txt'), optimizeCaption(row.e.caption) + '\n');
   fs.writeFileSync(path.join(row.folder, 'sound.txt'), soundText(row.e.audio));
+  fs.writeFileSync(path.join(row.folder, 'narration.txt'), script.narrationText(row.e));
+  fs.writeFileSync(path.join(row.folder, 'cuts.txt'), script.cutsText(row.e));
 }
 
 function writeIndex(rows) {
-  let md = `# Chess Edits — posting plan\n\n_${BRAND.name} (${BRAND.handle}). Each folder below is one ready-to-post video: the .mp4, its caption.txt, and sound.txt._\n\n`;
+  let md = `# Chess Edits — posting plan\n\n_${BRAND.name} (${BRAND.handle}). Each folder below is one ready-to-post video: the .mp4, caption.txt, sound.txt, narration.txt (text-to-speech lines) and cuts.txt (beat-cut times)._\n\n`;
   let cat = '';
   for (const r of rows) {
     if (r.cat !== cat) { cat = r.cat; md += `\n## ${cat}\n\n`; }
