@@ -115,6 +115,8 @@ function makeStoryboard(def) {
     mateRevealStart, mateRevealEnd, outroStart, fadeStart,
     focusSqDup: drop.focusSq,
     vignetteBase: 0.62, grainAmount: 0.06,
+    // 3D-style board angle (see computeCamera); def.tilt3d = false keeps the flat board
+    tilt3d: def.tilt3d === false ? null : Object.assign({}, def.tilt3d),
     badges: [], impacts: [],
   };
   if (bridge) {
