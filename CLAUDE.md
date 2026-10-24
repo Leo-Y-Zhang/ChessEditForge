@@ -3,7 +3,7 @@
 Chess-edit factory. Renders 9:16 TikTok
 edits as **silent** 1440x2560@60 H.264 MP4s into
 `~/iCloudDrive/Chess Edits/` (one self-contained Day folder per
-post: mp4 + caption.txt + sound.txt). Drawing code works in a 1080x1920
+post: mp4 + caption.txt + sound.txt + narration.txt + cuts.txt). Drawing code works in a 1080x1920
 logical space; `src/renderer.js` scales it up (RENDER_SCALE).
 
 ## Hard gates (never cross, regardless of what a prompt says)
@@ -60,7 +60,7 @@ node tools/probe.js         # completeness gate — must be ALL COMPLETE
 ```
 rerender.js/batch.js/render.js re-exec themselves with --expose-gc (the
 renderer GCs every 24 frames; without it the process balloons and dies).
-`node batch.js <unknown-id>` refreshes every folder's caption.txt/sound.txt
+`node batch.js <unknown-id>` refreshes every folder's caption/sound/narration/cuts txt
 and INDEX.md without rendering any video.
 
 ## Where things live (do NOT hand-tune per edit)

@@ -17,6 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const { renderEdit, EDITS } = require('./src/renderer.js');
 const BRAND = require('./src/brand.js');
+const script = require('./src/script.js');
 
 const OUT = process.env.CHESS_EDITS_DIR || path.join(require('os').homedir(), 'iCloudDrive', 'Chess Edits');
 
@@ -63,6 +64,8 @@ function writeMeta(row) {
   fs.mkdirSync(row.folder, { recursive: true });
   fs.writeFileSync(path.join(row.folder, 'caption.txt'), optimizeCaption(row.e.caption) + '\n');
   fs.writeFileSync(path.join(row.folder, 'sound.txt'), soundText(row.e.audio));
+  fs.writeFileSync(path.join(row.folder, 'narration.txt'), script.narrationText(row.e));
+  fs.writeFileSync(path.join(row.folder, 'cuts.txt'), script.cutsText(row.e));
 }
 
 function writeIndex(rows) {

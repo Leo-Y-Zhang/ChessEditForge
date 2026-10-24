@@ -1,6 +1,18 @@
 # SESSION HANDOFF — ChessEditForge
 
-_Last updated: 2026-07-21_
+_Last updated: 2026-10-24_
+
+## 2026-10-24: 3D-style board, narration and beat cuts
+- `src/board.js` draws the board through a pinhole camera (tilted squares,
+  upright pieces scaled by depth on contact shadows); `computeCamera` animates
+  the angle per segment. On by default; `def.tilt3d = false` keeps it flat.
+  `test/board3d.test.js` locks the projector (tilt 0 = identity, near edge
+  keeps its flat width, far ranks recede) and the camera sweep.
+- `src/script.js` writes `narration.txt` (TikTok text-to-speech lines with
+  start times) and `cuts.txt` (beat-cut moments) into every Day folder, from
+  the storyboard. `test/script.test.js` checks every edit's lines fit their
+  slots, read without notation symbols, and name the side that resigned.
+- 395 tests green.
 
 ## State
 - Catalogue: **30 edits (Days 01–30, a full month)** in `Chess Edits/Games/`,
@@ -34,7 +46,10 @@ _Last updated: 2026-07-21_
 - Tests: all green (`npm test`) — the count grows with the catalogue.
 
 ## NEXT
-1. Nothing pending. Catalogue = 30 edits, `node tools/probe.js` =
+1. Re-render the whole catalogue with the 3D board, ONE id at a time (see
+   CLAUDE.md), with CHESS_EDIT_BRAND_NAME / CHESS_EDIT_BRAND_HANDLE set, then
+   `node tools/probe.js` must print ALL 30 COMPLETE.
+2. Before that, nothing else pending. Catalogue = 30 edits, `node tools/probe.js` =
    ALL 30 COMPLETE, 291 tests green, every MP4 rendered with the final
    (hand-tuned angular) knight and auto-fit captions (verified 2026-07-21
    evening). Routine work = add new edits per CLAUDE.md.
