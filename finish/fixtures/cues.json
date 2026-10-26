@@ -1,0 +1,142 @@
+[
+  {
+    "id": "synthetic-01",
+    "vibe": "phonk",
+    "cues": [
+      {"t": 0.4, "kind": "HOOK", "text": "A QUIET MOVE"},
+      {"t": 1.5, "kind": "REVEAL", "text": ""},
+      {"t": 2.5, "kind": "BEAT", "text": "The trap opens"},
+      {"t": 3.5, "kind": "BADGE", "text": ""},
+      {"t": 5.2, "kind": "BRIDGE", "text": ""},
+      {"t": 6.0, "kind": "TENSION", "text": "Wait for it"},
+      {"t": 8.0, "kind": "DROP", "text": ""},
+      {"t": 9.25, "kind": "FINAL", "text": ""},
+      {"t": 11.0, "kind": "FINISH", "text": "CHECKMATE"},
+      {"t": 12.0, "kind": "OUTRO", "text": ""},
+      {"t": 14.5, "kind": "END", "text": ""}
+    ]
+  },
+  {
+    "id": "synthetic-02",
+    "vibe": "thoughtful",
+    "cues": [
+      {"t": 0.4, "kind": "HOOK", "text": "A QUIET MOVE"},
+      {"t": 0.95, "kind": "HOOK", "text": "THE TRAP"},
+      {"t": 1.5, "kind": "REVEAL", "text": ""},
+      {"t": 2.5, "kind": "BEAT", "text": "The trap opens"},
+      {"t": 3.5, "kind": "BADGE", "text": ""},
+      {"t": 6.2, "kind": "BRIDGE", "text": ""},
+      {"t": 7.0, "kind": "TENSION", "text": "Wait for it"},
+      {"t": 9.0, "kind": "DROP", "text": ""},
+      {"t": 10.25, "kind": "FINAL", "text": ""},
+      {"t": 12.0, "kind": "FINISH", "text": "CHECKMATE"},
+      {"t": 13.0, "kind": "OUTRO", "text": ""},
+      {"t": 15.5, "kind": "END", "text": ""}
+    ]
+  },
+  {
+    "id": "synthetic-03",
+    "vibe": "playful",
+    "cues": [
+      {"t": 0.4, "kind": "HOOK", "text": "A QUIET MOVE"},
+      {"t": 1.5, "kind": "REVEAL", "text": ""},
+      {"t": 2.5, "kind": "BEAT", "text": "The trap opens"},
+      {"t": 3.5, "kind": "BADGE", "text": ""},
+      {"t": 7.2, "kind": "BRIDGE", "text": ""},
+      {"t": 8.0, "kind": "TENSION", "text": "Wait for it"},
+      {"t": 10.0, "kind": "DROP", "text": ""},
+      {"t": 11.25, "kind": "FINAL", "text": ""},
+      {"t": 13.0, "kind": "FINISH", "text": "CHECKMATE"},
+      {"t": 14.0, "kind": "OUTRO", "text": ""},
+      {"t": 16.5, "kind": "END", "text": ""}
+    ]
+  },
+  {
+    "id": "synthetic-04",
+    "vibe": "phonk",
+    "cues": [
+      {"t": 0.4, "kind": "HOOK", "text": "A QUIET MOVE"},
+      {"t": 0.95, "kind": "HOOK", "text": "THE TRAP"},
+      {"t": 1.5, "kind": "REVEAL", "text": ""},
+      {"t": 2.5, "kind": "BEAT", "text": "The trap opens"},
+      {"t": 3.5, "kind": "BADGE", "text": ""},
+      {"t": 9.2, "kind": "BRIDGE", "text": ""},
+      {"t": 10.0, "kind": "TENSION", "text": "Wait for it"},
+      {"t": 12.0, "kind": "DROP", "text": ""},
+      {"t": 13.25, "kind": "FINAL", "text": ""},
+      {"t": 15.0, "kind": "FINISH", "text": "CHECKMATE"},
+      {"t": 16.0, "kind": "OUTRO", "text": ""},
+      {"t": 18.5, "kind": "END", "text": ""}
+    ]
+  },
+  {
+    "id": "synthetic-05",
+    "vibe": "thoughtful",
+    "cues": [
+      {"t": 0.4, "kind": "HOOK", "text": "A QUIET MOVE"},
+      {"t": 1.5, "kind": "REVEAL", "text": ""},
+      {"t": 2.5, "kind": "BEAT", "text": "The trap opens"},
+      {"t": 3.5, "kind": "BADGE", "text": ""},
+      {"t": 11.2, "kind": "BRIDGE", "text": ""},
+      {"t": 12.0, "kind": "TENSION", "text": "Wait for it"},
+      {"t": 14.0, "kind": "DROP", "text": ""},
+      {"t": 15.25, "kind": "FINAL", "text": ""},
+      {"t": 17.0, "kind": "FINISH", "text": "CHECKMATE"},
+      {"t": 18.0, "kind": "OUTRO", "text": ""},
+      {"t": 20.5, "kind": "END", "text": ""}
+    ]
+  },
+  {
+    "id": "synthetic-06",
+    "vibe": "playful",
+    "cues": [
+      {"t": 0.4, "kind": "HOOK", "text": "A QUIET MOVE"},
+      {"t": 0.95, "kind": "HOOK", "text": "THE TRAP"},
+      {"t": 1.5, "kind": "REVEAL", "text": ""},
+      {"t": 2.5, "kind": "BEAT", "text": "The trap opens"},
+      {"t": 3.5, "kind": "BADGE", "text": ""},
+      {"t": 13.2, "kind": "BRIDGE", "text": ""},
+      {"t": 14.0, "kind": "TENSION", "text": "Wait for it"},
+      {"t": 16.0, "kind": "DROP", "text": ""},
+      {"t": 17.25, "kind": "FINAL", "text": ""},
+      {"t": 19.0, "kind": "FINISH", "text": "CHECKMATE"},
+      {"t": 20.0, "kind": "OUTRO", "text": ""},
+      {"t": 22.5, "kind": "END", "text": ""}
+    ]
+  },
+  {
+    "id": "synthetic-07",
+    "vibe": "phonk",
+    "cues": [
+      {"t": 0.4, "kind": "HOOK", "text": "A QUIET MOVE"},
+      {"t": 1.5, "kind": "REVEAL", "text": ""},
+      {"t": 2.5, "kind": "BEAT", "text": "The trap opens"},
+      {"t": 3.5, "kind": "BADGE", "text": ""},
+      {"t": 15.2, "kind": "BRIDGE", "text": ""},
+      {"t": 16.0, "kind": "TENSION", "text": "Wait for it"},
+      {"t": 18.0, "kind": "DROP", "text": ""},
+      {"t": 19.25, "kind": "FINAL", "text": ""},
+      {"t": 21.0, "kind": "FINISH", "text": "CHECKMATE"},
+      {"t": 22.0, "kind": "OUTRO", "text": ""},
+      {"t": 24.5, "kind": "END", "text": ""}
+    ]
+  },
+  {
+    "id": "synthetic-08",
+    "vibe": "thoughtful",
+    "cues": [
+      {"t": 0.4, "kind": "HOOK", "text": "A QUIET MOVE"},
+      {"t": 0.95, "kind": "HOOK", "text": "THE TRAP"},
+      {"t": 1.5, "kind": "REVEAL", "text": ""},
+      {"t": 2.5, "kind": "BEAT", "text": "The trap opens"},
+      {"t": 3.5, "kind": "BADGE", "text": ""},
+      {"t": 17.2, "kind": "BRIDGE", "text": ""},
+      {"t": 18.0, "kind": "TENSION", "text": "Wait for it"},
+      {"t": 20.0, "kind": "DROP", "text": ""},
+      {"t": 21.25, "kind": "FINAL", "text": ""},
+      {"t": 23.0, "kind": "FINISH", "text": "CHECKMATE"},
+      {"t": 24.0, "kind": "OUTRO", "text": ""},
+      {"t": 26.5, "kind": "END", "text": ""}
+    ]
+  }
+]
