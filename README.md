@@ -27,6 +27,9 @@ output size: a quarter-scale render still peaked near 3.5GB here, so
 `CHESS_EDITS_DIR` unset the folders go to `~/iCloudDrive/Chess Edits`, which is
 probably not where you want them if you are not the person this was built for.
 
+[`finish/`](finish/README.md) adds timed voiceover and an original procedural score to silent edits.
+Use its Docker workflow to gather cues, finish the audio, and verify the copied picture.
+
 ## Everything you can run without rendering a video
 
 ```bash
