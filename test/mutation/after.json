@@ -1,0 +1,1378 @@
+{
+  "gates": {
+    "node": [
+      "node",
+      [
+        "--test",
+        "--test-reporter=tap",
+        "test/**/*.test.js"
+      ]
+    ],
+    "python": [
+      "python",
+      [
+        "-m",
+        "pytest",
+        "-x",
+        "finish/test_music.py",
+        "finish/test_finish.py"
+      ]
+    ]
+  },
+  "baseline": {
+    "node": "1..414\n# tests 414\n# suites 0\n# pass 414\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 489.6595\n",
+    "python": "============================ 146 passed in 19.30s ============================="
+  },
+  "results": [
+    {
+      "module": "src/chess.js",
+      "id": "path-or-to-and",
+      "from": "while (r !== tr || f !== tf)",
+      "to": "while (r !== tr && f !== tf)",
+      "line": 54,
+      "killed": true,
+      "failures": [
+        "not ok 67 - the browser export is named after the edit it is playing",
+        "not ok 68 - the browser player reports this edit's own drop time",
+        "not ok 69 - magnus: game replays cleanly to its finish",
+        "not ok 71 - magnus: the losing king really sits on mateKingSq at the end",
+        "not ok 72 - immortal: game replays cleanly to its finish",
+        "not ok 74 - immortal: the losing king really sits on mateKingSq at the end",
+        "not ok 75 - opera: game replays cleanly to its finish",
+        "not ok 77 - opera: the losing king really sits on mateKingSq at the end",
+        "not ok 78 - evergreen: game replays cleanly to its finish",
+        "not ok 80 - evergreen: the losing king really sits on mateKingSq at the end",
+        "not ok 81 - peruvian: game replays cleanly to its finish",
+        "not ok 83 - peruvian: the losing king really sits on mateKingSq at the end",
+        "not ok 84 - reti: game replays cleanly to its finish",
+        "not ok 86 - reti: the losing king really sits on mateKingSq at the end",
+        "not ok 87 - lasker: game replays cleanly to its finish",
+        "not ok 89 - lasker: the losing king really sits on mateKingSq at the end",
+        "not ok 93 - legall: game replays cleanly to its finish",
+        "not ok 95 - legall: the losing king really sits on mateKingSq at the end",
+        "not ok 96 - century: game replays cleanly to its finish",
+        "not ok 98 - century: the losing king really sits on mateKingSq at the end",
+        "not ok 99 - fools: game replays cleanly to its finish",
+        "not ok 101 - fools: the losing king really sits on mateKingSq at the end",
+        "not ok 102 - smothered: game replays cleanly to its finish",
+        "not ok 104 - smothered: the losing king really sits on mateKingSq at the end",
+        "not ok 105 - goldcoins: game replays cleanly to its finish",
+        "not ok 107 - rubinstein: game replays cleanly to its finish",
+        "not ok 109 - tal: game replays cleanly to its finish",
+        "not ok 111 - steinitz: game replays cleanly to its finish",
+        "not ok 113 - steinitz: the losing king really sits on mateKingSq at the end",
+        "not ok 114 - byrne63: game replays cleanly to its finish",
+        "not ok 116 - morphybird: game replays cleanly to its finish",
+        "not ok 118 - greco: game replays cleanly to its finish",
+        "not ok 120 - greco: the losing king really sits on mateKingSq at the end",
+        "not ok 121 - anand: game replays cleanly to its finish",
+        "not ok 123 - kasparov: game replays cleanly to its finish",
+        "not ok 125 - weiyi: game replays cleanly to its finish",
+        "not ok 127 - laskerbauer: game replays cleanly to its finish",
+        "not ok 129 - blackburne: game replays cleanly to its finish",
+        "not ok 131 - blackburne: the losing king really sits on mateKingSq at the end",
+        "not ok 132 - nezhmetdinov: game replays cleanly to its finish",
+        "not ok 134 - deepblue: game replays cleanly to its finish",
+        "not ok 136 - shortwalk: game replays cleanly to its finish",
+        "not ok 138 - zugzwang: game replays cleanly to its finish",
+        "not ok 140 - shirov: game replays cleanly to its finish",
+        "not ok 142 - gukesh: game replays cleanly to its finish",
+        "not ok 159 - sliding moves require every intervening square to be empty",
+        "not ok 164 - attack detection includes h1 and distinguishes the attacking colour",
+        "not ok 165 - replay accepts a complete mate and rejects changed signs, result position and truncated SAN",
+        "not ok 174 - applySan handles queenside castling",
+        "not ok 179 - checkmate edit topples the mated king with rising progress",
+        "not ok 180 - resign edit topples the auto-detected LOSING king",
+        "not ok 181 - no end animation before the final move lands",
+        "not ok 219 - the whole game replays without ambiguity",
+        "not ok 220 - the final position is the real 50.Qh6+ mating picture",
+        "not ok 221 - the finishing move is the queen gliding f4 -> h6",
+        "not ok 223 - the whole Immortal Game replays without ambiguity",
+        "not ok 224 - the final position is the real Be7\\# mate picture",
+        "not ok 225 - the mating move is the bishop d6 -> e7",
+        "not ok 227 - the Opera Game replays (incl. Nbd7 disambiguation and O-O-O)",
+        "not ok 228 - the final position is the real Rd8\\# opera mate",
+        "not ok 229 - the mating move is the rook d1 -> d8",
+        "not ok 244 - the check and mate signs must match the board",
+        "not ok 248 - every catalogue game is legal move by move, signs included"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "path-ignore-blocker",
+      "from": "if (board[r * 8 + f] != null) return false;",
+      "to": "if (false) return false;",
+      "line": 55,
+      "killed": true,
+      "failures": [
+        "not ok 67 - the browser export is named after the edit it is playing",
+        "not ok 68 - the browser player reports this edit's own drop time",
+        "not ok 69 - magnus: game replays cleanly to its finish",
+        "not ok 71 - magnus: the losing king really sits on mateKingSq at the end",
+        "not ok 72 - immortal: game replays cleanly to its finish",
+        "not ok 74 - immortal: the losing king really sits on mateKingSq at the end",
+        "not ok 75 - opera: game replays cleanly to its finish",
+        "not ok 77 - opera: the losing king really sits on mateKingSq at the end",
+        "not ok 78 - evergreen: game replays cleanly to its finish",
+        "not ok 80 - evergreen: the losing king really sits on mateKingSq at the end",
+        "not ok 81 - peruvian: game replays cleanly to its finish",
+        "not ok 83 - peruvian: the losing king really sits on mateKingSq at the end",
+        "not ok 84 - reti: game replays cleanly to its finish",
+        "not ok 86 - reti: the losing king really sits on mateKingSq at the end",
+        "not ok 87 - lasker: game replays cleanly to its finish",
+        "not ok 89 - lasker: the losing king really sits on mateKingSq at the end",
+        "not ok 90 - scholars: game replays cleanly to its finish",
+        "not ok 92 - scholars: the losing king really sits on mateKingSq at the end",
+        "not ok 93 - legall: game replays cleanly to its finish",
+        "not ok 95 - legall: the losing king really sits on mateKingSq at the end",
+        "not ok 96 - century: game replays cleanly to its finish",
+        "not ok 98 - century: the losing king really sits on mateKingSq at the end",
+        "not ok 99 - fools: game replays cleanly to its finish",
+        "not ok 101 - fools: the losing king really sits on mateKingSq at the end",
+        "not ok 102 - smothered: game replays cleanly to its finish",
+        "not ok 104 - smothered: the losing king really sits on mateKingSq at the end",
+        "not ok 105 - goldcoins: game replays cleanly to its finish",
+        "not ok 107 - rubinstein: game replays cleanly to its finish",
+        "not ok 109 - tal: game replays cleanly to its finish",
+        "not ok 111 - steinitz: game replays cleanly to its finish",
+        "not ok 113 - steinitz: the losing king really sits on mateKingSq at the end",
+        "not ok 114 - byrne63: game replays cleanly to its finish",
+        "not ok 116 - morphybird: game replays cleanly to its finish",
+        "not ok 118 - greco: game replays cleanly to its finish",
+        "not ok 120 - greco: the losing king really sits on mateKingSq at the end",
+        "not ok 121 - anand: game replays cleanly to its finish",
+        "not ok 123 - kasparov: game replays cleanly to its finish",
+        "not ok 125 - weiyi: game replays cleanly to its finish",
+        "not ok 127 - laskerbauer: game replays cleanly to its finish",
+        "not ok 129 - blackburne: game replays cleanly to its finish",
+        "not ok 131 - blackburne: the losing king really sits on mateKingSq at the end",
+        "not ok 132 - nezhmetdinov: game replays cleanly to its finish",
+        "not ok 134 - deepblue: game replays cleanly to its finish",
+        "not ok 136 - shortwalk: game replays cleanly to its finish",
+        "not ok 138 - zugzwang: game replays cleanly to its finish",
+        "not ok 140 - shirov: game replays cleanly to its finish",
+        "not ok 142 - gukesh: game replays cleanly to its finish",
+        "not ok 159 - sliding moves require every intervening square to be empty",
+        "not ok 164 - attack detection includes h1 and distinguishes the attacking colour",
+        "not ok 165 - replay accepts a complete mate and rejects changed signs, result position and truncated SAN",
+        "not ok 173 - applySan handles kingside castling (king and rook both move)",
+        "not ok 174 - applySan handles queenside castling",
+        "not ok 178 - replay applies a sequence and reports one position per half-move",
+        "not ok 179 - checkmate edit topples the mated king with rising progress",
+        "not ok 180 - resign edit topples the auto-detected LOSING king",
+        "not ok 181 - no end animation before the final move lands",
+        "not ok 219 - the whole game replays without ambiguity",
+        "not ok 220 - the final position is the real 50.Qh6+ mating picture",
+        "not ok 221 - the finishing move is the queen gliding f4 -> h6",
+        "not ok 223 - the whole Immortal Game replays without ambiguity",
+        "not ok 224 - the final position is the real Be7\\# mate picture",
+        "not ok 225 - the mating move is the bishop d6 -> e7",
+        "not ok 227 - the Opera Game replays (incl. Nbd7 disambiguation and O-O-O)",
+        "not ok 228 - the final position is the real Rd8\\# opera mate",
+        "not ok 229 - the mating move is the rook d1 -> d8",
+        "not ok 244 - the check and mate signs must match the board",
+        "not ok 247 - 0-0 and 0-0-0 are read as castling",
+        "not ok 248 - every catalogue game is legal move by move, signs included"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "attack-wrong-colour",
+      "from": "colorOf(p) !== byColor",
+      "to": "colorOf(p) === byColor",
+      "line": 84,
+      "killed": true,
+      "failures": [
+        "not ok 67 - the browser export is named after the edit it is playing",
+        "not ok 68 - the browser player reports this edit's own drop time",
+        "not ok 69 - magnus: game replays cleanly to its finish",
+        "not ok 71 - magnus: the losing king really sits on mateKingSq at the end",
+        "not ok 72 - immortal: game replays cleanly to its finish",
+        "not ok 74 - immortal: the losing king really sits on mateKingSq at the end",
+        "not ok 75 - opera: game replays cleanly to its finish",
+        "not ok 77 - opera: the losing king really sits on mateKingSq at the end",
+        "not ok 78 - evergreen: game replays cleanly to its finish",
+        "not ok 80 - evergreen: the losing king really sits on mateKingSq at the end",
+        "not ok 81 - peruvian: game replays cleanly to its finish",
+        "not ok 83 - peruvian: the losing king really sits on mateKingSq at the end",
+        "not ok 84 - reti: game replays cleanly to its finish",
+        "not ok 86 - reti: the losing king really sits on mateKingSq at the end",
+        "not ok 87 - lasker: game replays cleanly to its finish",
+        "not ok 89 - lasker: the losing king really sits on mateKingSq at the end",
+        "not ok 90 - scholars: game replays cleanly to its finish",
+        "not ok 92 - scholars: the losing king really sits on mateKingSq at the end",
+        "not ok 93 - legall: game replays cleanly to its finish",
+        "not ok 95 - legall: the losing king really sits on mateKingSq at the end",
+        "not ok 96 - century: game replays cleanly to its finish",
+        "not ok 98 - century: the losing king really sits on mateKingSq at the end",
+        "not ok 99 - fools: game replays cleanly to its finish",
+        "not ok 101 - fools: the losing king really sits on mateKingSq at the end",
+        "not ok 102 - smothered: game replays cleanly to its finish",
+        "not ok 104 - smothered: the losing king really sits on mateKingSq at the end",
+        "not ok 105 - goldcoins: game replays cleanly to its finish",
+        "not ok 107 - rubinstein: game replays cleanly to its finish",
+        "not ok 109 - tal: game replays cleanly to its finish",
+        "not ok 111 - steinitz: game replays cleanly to its finish",
+        "not ok 113 - steinitz: the losing king really sits on mateKingSq at the end",
+        "not ok 114 - byrne63: game replays cleanly to its finish",
+        "not ok 116 - morphybird: game replays cleanly to its finish",
+        "not ok 118 - greco: game replays cleanly to its finish",
+        "not ok 120 - greco: the losing king really sits on mateKingSq at the end",
+        "not ok 121 - anand: game replays cleanly to its finish",
+        "not ok 123 - kasparov: game replays cleanly to its finish",
+        "not ok 125 - weiyi: game replays cleanly to its finish",
+        "not ok 127 - laskerbauer: game replays cleanly to its finish",
+        "not ok 129 - blackburne: game replays cleanly to its finish",
+        "not ok 131 - blackburne: the losing king really sits on mateKingSq at the end",
+        "not ok 132 - nezhmetdinov: game replays cleanly to its finish",
+        "not ok 134 - deepblue: game replays cleanly to its finish",
+        "not ok 136 - shortwalk: game replays cleanly to its finish",
+        "not ok 138 - zugzwang: game replays cleanly to its finish",
+        "not ok 140 - shirov: game replays cleanly to its finish",
+        "not ok 142 - gukesh: game replays cleanly to its finish",
+        "not ok 158 - SAN requires exactly one candidate and respects rank disambiguation",
+        "not ok 162 - castling validates home pieces, rights, every empty square and every king-path square",
+        "not ok 163 - capturing a home rook removes its castling right even if a rook returns there",
+        "not ok 164 - attack detection includes h1 and distinguishes the attacking colour",
+        "not ok 165 - replay accepts a complete mate and rejects changed signs, result position and truncated SAN",
+        "not ok 170 - applyMove captures the piece on the destination square",
+        "not ok 171 - applySan resolves a pawn double-push",
+        "not ok 172 - applySan resolves a knight move",
+        "not ok 173 - applySan handles kingside castling (king and rook both move)",
+        "not ok 174 - applySan handles queenside castling",
+        "not ok 175 - applySan handles en passant (removes the passed pawn)",
+        "not ok 176 - applySan handles promotion",
+        "not ok 178 - replay applies a sequence and reports one position per half-move",
+        "not ok 179 - checkmate edit topples the mated king with rising progress",
+        "not ok 180 - resign edit topples the auto-detected LOSING king",
+        "not ok 181 - no end animation before the final move lands",
+        "not ok 219 - the whole game replays without ambiguity",
+        "not ok 220 - the final position is the real 50.Qh6+ mating picture",
+        "not ok 221 - the finishing move is the queen gliding f4 -> h6",
+        "not ok 223 - the whole Immortal Game replays without ambiguity",
+        "not ok 224 - the final position is the real Be7\\# mate picture",
+        "not ok 225 - the mating move is the bishop d6 -> e7",
+        "not ok 227 - the Opera Game replays (incl. Nbd7 disambiguation and O-O-O)",
+        "not ok 228 - the final position is the real Rd8\\# opera mate",
+        "not ok 229 - the mating move is the rook d1 -> d8",
+        "not ok 242 - promotion is read with or without \"=\" and in either case",
+        "not ok 244 - the check and mate signs must match the board",
+        "not ok 246 - a result token is accepted only as the last entry",
+        "not ok 247 - 0-0 and 0-0-0 are read as castling",
+        "not ok 248 - every catalogue game is legal move by move, signs included",
+        "not ok 16 - test\\\\scene-boundaries.test.js"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "attack-skip-last-square",
+      "from": "for (let i = 0; i < 64; i++) {\n    const p",
+      "to": "for (let i = 0; i < 63; i++) {\n    const p",
+      "line": 82,
+      "killed": true,
+      "failures": [
+        "not ok 164 - attack detection includes h1 and distinguishes the attacking colour"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "check-return-early",
+      "from": "return isAttacked(board, kIdx,",
+      "to": "return false; return isAttacked(board, kIdx,",
+      "line": 103,
+      "killed": true,
+      "failures": [
+        "not ok 67 - the browser export is named after the edit it is playing",
+        "not ok 68 - the browser player reports this edit's own drop time",
+        "not ok 69 - magnus: game replays cleanly to its finish",
+        "not ok 71 - magnus: the losing king really sits on mateKingSq at the end",
+        "not ok 72 - immortal: game replays cleanly to its finish",
+        "not ok 74 - immortal: the losing king really sits on mateKingSq at the end",
+        "not ok 75 - opera: game replays cleanly to its finish",
+        "not ok 77 - opera: the losing king really sits on mateKingSq at the end",
+        "not ok 78 - evergreen: game replays cleanly to its finish",
+        "not ok 80 - evergreen: the losing king really sits on mateKingSq at the end",
+        "not ok 81 - peruvian: game replays cleanly to its finish",
+        "not ok 83 - peruvian: the losing king really sits on mateKingSq at the end",
+        "not ok 84 - reti: game replays cleanly to its finish",
+        "not ok 86 - reti: the losing king really sits on mateKingSq at the end",
+        "not ok 87 - lasker: game replays cleanly to its finish",
+        "not ok 89 - lasker: the losing king really sits on mateKingSq at the end",
+        "not ok 90 - scholars: game replays cleanly to its finish",
+        "not ok 92 - scholars: the losing king really sits on mateKingSq at the end",
+        "not ok 93 - legall: game replays cleanly to its finish",
+        "not ok 95 - legall: the losing king really sits on mateKingSq at the end",
+        "not ok 96 - century: game replays cleanly to its finish",
+        "not ok 98 - century: the losing king really sits on mateKingSq at the end",
+        "not ok 99 - fools: game replays cleanly to its finish",
+        "not ok 101 - fools: the losing king really sits on mateKingSq at the end",
+        "not ok 102 - smothered: game replays cleanly to its finish",
+        "not ok 104 - smothered: the losing king really sits on mateKingSq at the end",
+        "not ok 107 - rubinstein: game replays cleanly to its finish",
+        "not ok 109 - tal: game replays cleanly to its finish",
+        "not ok 111 - steinitz: game replays cleanly to its finish",
+        "not ok 113 - steinitz: the losing king really sits on mateKingSq at the end",
+        "not ok 114 - byrne63: game replays cleanly to its finish",
+        "not ok 116 - morphybird: game replays cleanly to its finish",
+        "not ok 118 - greco: game replays cleanly to its finish",
+        "not ok 120 - greco: the losing king really sits on mateKingSq at the end",
+        "not ok 121 - anand: game replays cleanly to its finish",
+        "not ok 123 - kasparov: game replays cleanly to its finish",
+        "not ok 125 - weiyi: game replays cleanly to its finish",
+        "not ok 127 - laskerbauer: game replays cleanly to its finish",
+        "not ok 129 - blackburne: game replays cleanly to its finish",
+        "not ok 131 - blackburne: the losing king really sits on mateKingSq at the end",
+        "not ok 132 - nezhmetdinov: game replays cleanly to its finish",
+        "not ok 134 - deepblue: game replays cleanly to its finish",
+        "not ok 136 - shortwalk: game replays cleanly to its finish",
+        "not ok 140 - shirov: game replays cleanly to its finish",
+        "not ok 142 - gukesh: game replays cleanly to its finish",
+        "not ok 164 - attack detection includes h1 and distinguishes the attacking colour",
+        "not ok 165 - replay accepts a complete mate and rejects changed signs, result position and truncated SAN",
+        "not ok 179 - checkmate edit topples the mated king with rising progress",
+        "not ok 219 - the whole game replays without ambiguity",
+        "not ok 220 - the final position is the real 50.Qh6+ mating picture",
+        "not ok 221 - the finishing move is the queen gliding f4 -> h6",
+        "not ok 223 - the whole Immortal Game replays without ambiguity",
+        "not ok 224 - the final position is the real Be7\\# mate picture",
+        "not ok 225 - the mating move is the bishop d6 -> e7",
+        "not ok 227 - the Opera Game replays (incl. Nbd7 disambiguation and O-O-O)",
+        "not ok 228 - the final position is the real Rd8\\# opera mate",
+        "not ok 229 - the mating move is the rook d1 -> d8",
+        "not ok 244 - the check and mate signs must match the board",
+        "not ok 248 - every catalogue game is legal move by move, signs included"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "allow-friendly-capture",
+      "from": "if (board[to] != null && colorOf(board[to]) === side) return false;",
+      "to": "if (false) return false;",
+      "line": 185,
+      "killed": true,
+      "failures": [
+        "not ok 67 - the browser export is named after the edit it is playing",
+        "not ok 68 - the browser player reports this edit's own drop time",
+        "not ok 72 - immortal: game replays cleanly to its finish",
+        "not ok 74 - immortal: the losing king really sits on mateKingSq at the end",
+        "not ok 75 - opera: game replays cleanly to its finish",
+        "not ok 77 - opera: the losing king really sits on mateKingSq at the end",
+        "not ok 78 - evergreen: game replays cleanly to its finish",
+        "not ok 80 - evergreen: the losing king really sits on mateKingSq at the end",
+        "not ok 81 - peruvian: game replays cleanly to its finish",
+        "not ok 83 - peruvian: the losing king really sits on mateKingSq at the end",
+        "not ok 84 - reti: game replays cleanly to its finish",
+        "not ok 86 - reti: the losing king really sits on mateKingSq at the end",
+        "not ok 90 - scholars: game replays cleanly to its finish",
+        "not ok 92 - scholars: the losing king really sits on mateKingSq at the end",
+        "not ok 93 - legall: game replays cleanly to its finish",
+        "not ok 95 - legall: the losing king really sits on mateKingSq at the end",
+        "not ok 99 - fools: game replays cleanly to its finish",
+        "not ok 101 - fools: the losing king really sits on mateKingSq at the end",
+        "not ok 102 - smothered: game replays cleanly to its finish",
+        "not ok 104 - smothered: the losing king really sits on mateKingSq at the end",
+        "not ok 111 - steinitz: game replays cleanly to its finish",
+        "not ok 113 - steinitz: the losing king really sits on mateKingSq at the end",
+        "not ok 118 - greco: game replays cleanly to its finish",
+        "not ok 120 - greco: the losing king really sits on mateKingSq at the end",
+        "not ok 129 - blackburne: game replays cleanly to its finish",
+        "not ok 131 - blackburne: the losing king really sits on mateKingSq at the end",
+        "not ok 165 - replay accepts a complete mate and rejects changed signs, result position and truncated SAN",
+        "not ok 223 - the whole Immortal Game replays without ambiguity",
+        "not ok 224 - the final position is the real Be7\\# mate picture",
+        "not ok 225 - the mating move is the bishop d6 -> e7",
+        "not ok 227 - the Opera Game replays (incl. Nbd7 disambiguation and O-O-O)",
+        "not ok 228 - the final position is the real Rd8\\# opera mate",
+        "not ok 229 - the mating move is the rook d1 -> d8",
+        "not ok 244 - the check and mate signs must match the board",
+        "not ok 248 - every catalogue game is legal move by move, signs included"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "ignore-self-check",
+      "from": "return !isInCheck(applyMove(board,",
+      "to": "return true; return !isInCheck(applyMove(board,",
+      "line": 189,
+      "killed": true,
+      "failures": [
+        "not ok 67 - the browser export is named after the edit it is playing",
+        "not ok 68 - the browser player reports this edit's own drop time",
+        "not ok 72 - immortal: game replays cleanly to its finish",
+        "not ok 74 - immortal: the losing king really sits on mateKingSq at the end",
+        "not ok 75 - opera: game replays cleanly to its finish",
+        "not ok 77 - opera: the losing king really sits on mateKingSq at the end",
+        "not ok 78 - evergreen: game replays cleanly to its finish",
+        "not ok 80 - evergreen: the losing king really sits on mateKingSq at the end",
+        "not ok 81 - peruvian: game replays cleanly to its finish",
+        "not ok 83 - peruvian: the losing king really sits on mateKingSq at the end",
+        "not ok 84 - reti: game replays cleanly to its finish",
+        "not ok 86 - reti: the losing king really sits on mateKingSq at the end",
+        "not ok 87 - lasker: game replays cleanly to its finish",
+        "not ok 89 - lasker: the losing king really sits on mateKingSq at the end",
+        "not ok 90 - scholars: game replays cleanly to its finish",
+        "not ok 92 - scholars: the losing king really sits on mateKingSq at the end",
+        "not ok 93 - legall: game replays cleanly to its finish",
+        "not ok 95 - legall: the losing king really sits on mateKingSq at the end",
+        "not ok 96 - century: game replays cleanly to its finish",
+        "not ok 98 - century: the losing king really sits on mateKingSq at the end",
+        "not ok 99 - fools: game replays cleanly to its finish",
+        "not ok 101 - fools: the losing king really sits on mateKingSq at the end",
+        "not ok 102 - smothered: game replays cleanly to its finish",
+        "not ok 104 - smothered: the losing king really sits on mateKingSq at the end",
+        "not ok 111 - steinitz: game replays cleanly to its finish",
+        "not ok 113 - steinitz: the losing king really sits on mateKingSq at the end",
+        "not ok 118 - greco: game replays cleanly to its finish",
+        "not ok 120 - greco: the losing king really sits on mateKingSq at the end",
+        "not ok 129 - blackburne: game replays cleanly to its finish",
+        "not ok 131 - blackburne: the losing king really sits on mateKingSq at the end",
+        "not ok 165 - replay accepts a complete mate and rejects changed signs, result position and truncated SAN",
+        "not ok 223 - the whole Immortal Game replays without ambiguity",
+        "not ok 224 - the final position is the real Be7\\# mate picture",
+        "not ok 225 - the mating move is the bishop d6 -> e7",
+        "not ok 227 - the Opera Game replays (incl. Nbd7 disambiguation and O-O-O)",
+        "not ok 228 - the final position is the real Rd8\\# opera mate",
+        "not ok 229 - the mating move is the rook d1 -> d8",
+        "not ok 235 - a side in check must answer the check",
+        "not ok 236 - a pinned piece cannot move off the pin line",
+        "not ok 244 - the check and mate signs must match the board",
+        "not ok 248 - every catalogue game is legal move by move, signs included"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "double-push-ignore-middle",
+      "from": "board[(fr + dir) * 8 + ff] == null",
+      "to": "true",
+      "line": 171,
+      "killed": true,
+      "failures": [
+        "not ok 160 - pawn double pushes require the starting rank and a clear intermediate square"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "double-push-any-rank",
+      "from": "fr === startRow && tr === fr + 2 * dir",
+      "to": "tr === fr + 2 * dir",
+      "line": 171,
+      "killed": true,
+      "failures": [
+        "not ok 160 - pawn double pushes require the starting rank and a clear intermediate square"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "en-passant-ignore-rank",
+      "from": "passed !== (white ? 'p' : 'P') || fr !== (white ? 3 : 4)",
+      "to": "passed !== (white ? 'p' : 'P')",
+      "line": 177,
+      "killed": true,
+      "failures": [
+        "not ok 161 - en passant needs the correct rank, enemy pawn and immediate history"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "en-passant-ignore-history",
+      "from": "return !state || state.ep === to;",
+      "to": "return true;",
+      "line": 178,
+      "killed": true,
+      "failures": [
+        "not ok 161 - en passant needs the correct rank, enemy pawn and immediate history",
+        "not ok 240 - en passant is only available straight after the double push"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "castle-ignore-rights",
+      "from": "state && !state.castling.includes(right)",
+      "to": "false",
+      "line": 210,
+      "killed": true,
+      "failures": [
+        "not ok 162 - castling validates home pieces, rights, every empty square and every king-path square",
+        "not ok 163 - capturing a home rook removes its castling right even if a rook returns there",
+        "not ok 238 - castling is refused after the king has moved"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "castle-home-or-to-and",
+      "from": "board[row * 8 + 4] !== (white ? 'K' : 'k') ||",
+      "to": "board[row * 8 + 4] !== (white ? 'K' : 'k') &&",
+      "line": 211,
+      "killed": true,
+      "failures": [
+        "not ok 162 - castling validates home pieces, rights, every empty square and every king-path square"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "castle-ignore-occupancy",
+      "from": "between.some((f) => board[row * 8 + f] != null)",
+      "to": "false",
+      "line": 216,
+      "killed": true,
+      "failures": [
+        "not ok 162 - castling validates home pieces, rights, every empty square and every king-path square",
+        "not ok 237 - castling needs empty squares between king and rook"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "castle-ignore-start-check",
+      "from": "long ? [4, 3, 2] : [4, 5, 6]",
+      "to": "long ? [3, 2] : [5, 6]",
+      "line": 217,
+      "killed": true,
+      "failures": [
+        "not ok 162 - castling validates home pieces, rights, every empty square and every king-path square"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "castle-ignore-transit-check",
+      "from": "long ? [4, 3, 2] : [4, 5, 6]",
+      "to": "long ? [4, 2] : [4, 6]",
+      "line": 217,
+      "killed": true,
+      "failures": [
+        "not ok 162 - castling validates home pieces, rights, every empty square and every king-path square"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "castle-ignore-destination-check",
+      "from": "long ? [4, 3, 2] : [4, 5, 6]",
+      "to": "long ? [4, 3] : [4, 5]",
+      "line": 217,
+      "killed": true,
+      "failures": [
+        "not ok 162 - castling validates home pieces, rights, every empty square and every king-path square",
+        "not ok 239 - castling is refused out of or through check"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "promotion-ignore-rank",
+      "from": "(toR === lastRow) !== (promo != null)",
+      "to": "false",
+      "line": 243,
+      "killed": true,
+      "failures": [
+        "not ok 241 - a pawn reaching the last rank must promote, and only there"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "san-ignore-file",
+      "from": "if (fileCh && i % 8 !== fileCh.charCodeAt(0) - 97) continue;",
+      "to": "if (false) continue;",
+      "line": 269,
+      "killed": true,
+      "failures": [
+        "not ok 69 - magnus: game replays cleanly to its finish",
+        "not ok 71 - magnus: the losing king really sits on mateKingSq at the end",
+        "not ok 75 - opera: game replays cleanly to its finish",
+        "not ok 77 - opera: the losing king really sits on mateKingSq at the end",
+        "not ok 78 - evergreen: game replays cleanly to its finish",
+        "not ok 80 - evergreen: the losing king really sits on mateKingSq at the end",
+        "not ok 87 - lasker: game replays cleanly to its finish",
+        "not ok 89 - lasker: the losing king really sits on mateKingSq at the end",
+        "not ok 96 - century: game replays cleanly to its finish",
+        "not ok 98 - century: the losing king really sits on mateKingSq at the end",
+        "not ok 102 - smothered: game replays cleanly to its finish",
+        "not ok 104 - smothered: the losing king really sits on mateKingSq at the end",
+        "not ok 105 - goldcoins: game replays cleanly to its finish",
+        "not ok 107 - rubinstein: game replays cleanly to its finish",
+        "not ok 109 - tal: game replays cleanly to its finish",
+        "not ok 111 - steinitz: game replays cleanly to its finish",
+        "not ok 113 - steinitz: the losing king really sits on mateKingSq at the end",
+        "not ok 114 - byrne63: game replays cleanly to its finish",
+        "not ok 121 - anand: game replays cleanly to its finish",
+        "not ok 123 - kasparov: game replays cleanly to its finish",
+        "not ok 125 - weiyi: game replays cleanly to its finish",
+        "not ok 127 - laskerbauer: game replays cleanly to its finish",
+        "not ok 132 - nezhmetdinov: game replays cleanly to its finish",
+        "not ok 134 - deepblue: game replays cleanly to its finish",
+        "not ok 136 - shortwalk: game replays cleanly to its finish",
+        "not ok 138 - zugzwang: game replays cleanly to its finish",
+        "not ok 140 - shirov: game replays cleanly to its finish",
+        "not ok 142 - gukesh: game replays cleanly to its finish",
+        "not ok 177 - applySan disambiguates by file when two knights can reach a square",
+        "not ok 179 - checkmate edit topples the mated king with rising progress",
+        "not ok 180 - resign edit topples the auto-detected LOSING king",
+        "not ok 181 - no end animation before the final move lands",
+        "not ok 219 - the whole game replays without ambiguity",
+        "not ok 220 - the final position is the real 50.Qh6+ mating picture",
+        "not ok 221 - the finishing move is the queen gliding f4 -> h6",
+        "not ok 227 - the Opera Game replays (incl. Nbd7 disambiguation and O-O-O)",
+        "not ok 228 - the final position is the real Rd8\\# opera mate",
+        "not ok 229 - the mating move is the rook d1 -> d8",
+        "not ok 248 - every catalogue game is legal move by move, signs included"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "san-ignore-rank",
+      "from": "if (rankCh && Math.floor(i / 8) !== 8 - Number(rankCh)) continue;",
+      "to": "if (false) continue;",
+      "line": 270,
+      "killed": true,
+      "failures": [
+        "not ok 69 - magnus: game replays cleanly to its finish",
+        "not ok 71 - magnus: the losing king really sits on mateKingSq at the end",
+        "not ok 134 - deepblue: game replays cleanly to its finish",
+        "not ok 136 - shortwalk: game replays cleanly to its finish",
+        "not ok 138 - zugzwang: game replays cleanly to its finish",
+        "not ok 158 - SAN requires exactly one candidate and respects rank disambiguation",
+        "not ok 179 - checkmate edit topples the mated king with rising progress",
+        "not ok 219 - the whole game replays without ambiguity",
+        "not ok 220 - the final position is the real 50.Qh6+ mating picture",
+        "not ok 221 - the finishing move is the queen gliding f4 -> h6",
+        "not ok 248 - every catalogue game is legal move by move, signs included"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "san-allow-ambiguous-count",
+      "from": "candidates.length !== 1",
+      "to": "candidates.length < 1",
+      "line": 273,
+      "killed": true,
+      "failures": [
+        "not ok 158 - SAN requires exactly one candidate and respects rank disambiguation"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "san-ignore-capture-sign",
+      "from": "!!capture !== (board[to] != null)",
+      "to": "false",
+      "line": 274,
+      "killed": true,
+      "failures": [
+        "not ok 243 - a capture sign must match the board"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "rights-ignore-captured-rook",
+      "from": "[mv.from, mv.to]",
+      "to": "[mv.from]",
+      "line": 287,
+      "killed": true,
+      "failures": [
+        "not ok 163 - capturing a home rook removes its castling right even if a rook returns there"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "result-before-last",
+      "from": "i !== sans.length - 1",
+      "to": "false",
+      "line": 308,
+      "killed": true,
+      "failures": [
+        "not ok 165 - replay accepts a complete mate and rejects changed signs, result position and truncated SAN",
+        "not ok 246 - a result token is accepted only as the last entry"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "replay-ignore-check-sign",
+      "from": "if (sign !== want)",
+      "to": "if (false)",
+      "line": 320,
+      "killed": true,
+      "failures": [
+        "not ok 165 - replay accepts a complete mate and rejects changed signs, result position and truncated SAN",
+        "not ok 244 - the check and mate signs must match the board"
+      ]
+    },
+    {
+      "module": "src/chess.js",
+      "id": "replay-count-off-by-one",
+      "from": "positions.push(board);",
+      "to": "if (i > 0) positions.push(board);",
+      "line": 323,
+      "killed": true,
+      "failures": [
+        "not ok 67 - the browser export is named after the edit it is playing",
+        "not ok 68 - the browser player reports this edit's own drop time",
+        "not ok 69 - magnus: game replays cleanly to its finish",
+        "not ok 72 - immortal: game replays cleanly to its finish",
+        "not ok 75 - opera: game replays cleanly to its finish",
+        "not ok 78 - evergreen: game replays cleanly to its finish",
+        "not ok 81 - peruvian: game replays cleanly to its finish",
+        "not ok 84 - reti: game replays cleanly to its finish",
+        "not ok 87 - lasker: game replays cleanly to its finish",
+        "not ok 90 - scholars: game replays cleanly to its finish",
+        "not ok 93 - legall: game replays cleanly to its finish",
+        "not ok 96 - century: game replays cleanly to its finish",
+        "not ok 99 - fools: game replays cleanly to its finish",
+        "not ok 102 - smothered: game replays cleanly to its finish",
+        "not ok 105 - goldcoins: game replays cleanly to its finish",
+        "not ok 107 - rubinstein: game replays cleanly to its finish",
+        "not ok 109 - tal: game replays cleanly to its finish",
+        "not ok 111 - steinitz: game replays cleanly to its finish",
+        "not ok 114 - byrne63: game replays cleanly to its finish",
+        "not ok 116 - morphybird: game replays cleanly to its finish",
+        "not ok 118 - greco: game replays cleanly to its finish",
+        "not ok 121 - anand: game replays cleanly to its finish",
+        "not ok 123 - kasparov: game replays cleanly to its finish",
+        "not ok 125 - weiyi: game replays cleanly to its finish",
+        "not ok 127 - laskerbauer: game replays cleanly to its finish",
+        "not ok 129 - blackburne: game replays cleanly to its finish",
+        "not ok 132 - nezhmetdinov: game replays cleanly to its finish",
+        "not ok 134 - deepblue: game replays cleanly to its finish",
+        "not ok 136 - shortwalk: game replays cleanly to its finish",
+        "not ok 138 - zugzwang: game replays cleanly to its finish",
+        "not ok 140 - shirov: game replays cleanly to its finish",
+        "not ok 142 - gukesh: game replays cleanly to its finish",
+        "not ok 165 - replay accepts a complete mate and rejects changed signs, result position and truncated SAN",
+        "not ok 178 - replay applies a sequence and reports one position per half-move",
+        "not ok 180 - resign edit topples the auto-detected LOSING king",
+        "not ok 219 - the whole game replays without ambiguity",
+        "not ok 223 - the whole Immortal Game replays without ambiguity",
+        "not ok 227 - the Opera Game replays (incl. Nbd7 disambiguation and O-O-O)",
+        "not ok 244 - the check and mate signs must match the board",
+        "not ok 246 - a result token is accepted only as the last entry"
+      ]
+    },
+    {
+      "module": "src/engine.js",
+      "id": "caption-or-to-and",
+      "from": "t < cap.start || t > cap.end",
+      "to": "t < cap.start && t > cap.end",
+      "line": 29,
+      "killed": false,
+      "failures": []
+    },
+    {
+      "module": "src/engine.js",
+      "id": "caption-include-zero-opacity",
+      "from": "if (opacity <= 0)",
+      "to": "if (opacity < 0)",
+      "line": 35,
+      "killed": true,
+      "failures": [
+        "not ok 410 - captions are absent outside their interval and at zero-opacity endpoints"
+      ]
+    },
+    {
+      "module": "src/engine.js",
+      "id": "caption-fade-max",
+      "from": "Math.min(fadeIn, fadeOut)",
+      "to": "Math.max(fadeIn, fadeOut)",
+      "line": 34,
+      "killed": true,
+      "failures": [
+        "not ok 186 - caption opacity ramps in then out",
+        "not ok 410 - captions are absent outside their interval and at zero-opacity endpoints"
+      ]
+    },
+    {
+      "module": "src/engine.js",
+      "id": "schedule-strict-boundary",
+      "from": "t >= s.start",
+      "to": "t > s.start",
+      "line": 52,
+      "killed": true,
+      "failures": [
+        "not ok 411 - weighted montage switches at the exact boundary and glides before holding"
+      ]
+    },
+    {
+      "module": "src/engine.js",
+      "id": "schedule-progress-no-glide",
+      "from": "clamp01(slotFrac / glide), slotFrac",
+      "to": "clamp01(slotFrac), slotFrac",
+      "line": 54,
+      "killed": true,
+      "failures": [
+        "not ok 411 - weighted montage switches at the exact boundary and glides before holding"
+      ]
+    },
+    {
+      "module": "src/engine.js",
+      "id": "equal-slots-count-off-by-one",
+      "from": "cfg.flurryToPly - cfg.flurryFromPly + 1",
+      "to": "cfg.flurryToPly - cfg.flurryFromPly - 1",
+      "line": 56,
+      "killed": true,
+      "failures": [
+        "not ok 187 - plyAt maps the flurry window onto move indices",
+        "not ok 342 - montage starts from the initial board and begins moving at the exact start"
+      ]
+    },
+    {
+      "module": "src/engine.js",
+      "id": "equal-slots-no-last-clamp",
+      "from": "if (idx >= n) idx = n - 1;",
+      "to": "if (idx > n) idx = n - 1;",
+      "line": 60,
+      "killed": true,
+      "failures": [
+        "not ok 187 - plyAt maps the flurry window onto move indices"
+      ]
+    },
+    {
+      "module": "src/storygen.js",
+      "id": "montage-remove-last-ply",
+      "from": "p <= to; p++",
+      "to": "p < to; p++",
+      "line": 45,
+      "killed": true,
+      "failures": [
+        "not ok 253 - magnus: the board never teleports — every ply is shown",
+        "not ok 256 - immortal: the board never teleports — every ply is shown",
+        "not ok 259 - opera: the board never teleports — every ply is shown",
+        "not ok 262 - evergreen: the board never teleports — every ply is shown",
+        "not ok 265 - peruvian: the board never teleports — every ply is shown",
+        "not ok 268 - reti: the board never teleports — every ply is shown",
+        "not ok 271 - lasker: the board never teleports — every ply is shown",
+        "not ok 274 - scholars: the board never teleports — every ply is shown",
+        "not ok 277 - legall: the board never teleports — every ply is shown",
+        "not ok 280 - century: the board never teleports — every ply is shown",
+        "not ok 283 - fools: the board never teleports — every ply is shown",
+        "not ok 286 - smothered: the board never teleports — every ply is shown",
+        "not ok 289 - goldcoins: the board never teleports — every ply is shown",
+        "not ok 292 - rubinstein: the board never teleports — every ply is shown",
+        "not ok 295 - tal: the board never teleports — every ply is shown",
+        "not ok 298 - steinitz: the board never teleports — every ply is shown",
+        "not ok 301 - byrne63: the board never teleports — every ply is shown",
+        "not ok 304 - morphybird: the board never teleports — every ply is shown",
+        "not ok 307 - greco: the board never teleports — every ply is shown",
+        "not ok 310 - anand: the board never teleports — every ply is shown",
+        "not ok 313 - kasparov: the board never teleports — every ply is shown",
+        "not ok 316 - weiyi: the board never teleports — every ply is shown",
+        "not ok 319 - laskerbauer: the board never teleports — every ply is shown",
+        "not ok 322 - blackburne: the board never teleports — every ply is shown",
+        "not ok 325 - nezhmetdinov: the board never teleports — every ply is shown",
+        "not ok 328 - deepblue: the board never teleports — every ply is shown",
+        "not ok 331 - shortwalk: the board never teleports — every ply is shown",
+        "not ok 334 - zugzwang: the board never teleports — every ply is shown",
+        "not ok 337 - shirov: the board never teleports — every ply is shown",
+        "not ok 340 - gukesh: the board never teleports — every ply is shown"
+      ]
+    },
+    {
+      "module": "src/storygen.js",
+      "id": "bridge-include-zero-gap",
+      "from": "if (gap > 0)",
+      "to": "if (gap >= 0)",
+      "line": 64,
+      "killed": true,
+      "failures": [
+        "not ok 256 - immortal: the board never teleports — every ply is shown",
+        "not ok 259 - opera: the board never teleports — every ply is shown",
+        "not ok 262 - evergreen: the board never teleports — every ply is shown",
+        "not ok 265 - peruvian: the board never teleports — every ply is shown",
+        "not ok 268 - reti: the board never teleports — every ply is shown",
+        "not ok 271 - lasker: the board never teleports — every ply is shown",
+        "not ok 274 - scholars: the board never teleports — every ply is shown",
+        "not ok 277 - legall: the board never teleports — every ply is shown",
+        "not ok 283 - fools: the board never teleports — every ply is shown",
+        "not ok 286 - smothered: the board never teleports — every ply is shown",
+        "not ok 289 - goldcoins: the board never teleports — every ply is shown",
+        "not ok 292 - rubinstein: the board never teleports — every ply is shown",
+        "not ok 295 - tal: the board never teleports — every ply is shown",
+        "not ok 301 - byrne63: the board never teleports — every ply is shown",
+        "not ok 304 - morphybird: the board never teleports — every ply is shown",
+        "not ok 307 - greco: the board never teleports — every ply is shown",
+        "not ok 310 - anand: the board never teleports — every ply is shown",
+        "not ok 322 - blackburne: the board never teleports — every ply is shown",
+        "not ok 328 - deepblue: the board never teleports — every ply is shown",
+        "not ok 331 - shortwalk: the board never teleports — every ply is shown",
+        "not ok 334 - zugzwang: the board never teleports — every ply is shown",
+        "not ok 337 - shirov: the board never teleports — every ply is shown",
+        "not ok 340 - gukesh: the board never teleports — every ply is shown"
+      ]
+    },
+    {
+      "module": "src/storygen.js",
+      "id": "single-drop-wrong-count",
+      "from": "if (nDrop === 1)",
+      "to": "if (nDrop !== 1)",
+      "line": 79,
+      "killed": true,
+      "failures": [
+        "not ok 256 - immortal: the board never teleports — every ply is shown",
+        "not ok 259 - opera: the board never teleports — every ply is shown",
+        "not ok 262 - evergreen: the board never teleports — every ply is shown",
+        "not ok 265 - peruvian: the board never teleports — every ply is shown",
+        "not ok 268 - reti: the board never teleports — every ply is shown",
+        "not ok 271 - lasker: the board never teleports — every ply is shown",
+        "not ok 277 - legall: the board never teleports — every ply is shown",
+        "not ok 280 - century: the board never teleports — every ply is shown",
+        "not ok 286 - smothered: the board never teleports — every ply is shown",
+        "not ok 292 - rubinstein: the board never teleports — every ply is shown",
+        "not ok 295 - tal: the board never teleports — every ply is shown",
+        "not ok 298 - steinitz: the board never teleports — every ply is shown",
+        "not ok 301 - byrne63: the board never teleports — every ply is shown",
+        "not ok 304 - morphybird: the board never teleports — every ply is shown",
+        "not ok 307 - greco: the board never teleports — every ply is shown",
+        "not ok 313 - kasparov: the board never teleports — every ply is shown",
+        "not ok 316 - weiyi: the board never teleports — every ply is shown",
+        "not ok 319 - laskerbauer: the board never teleports — every ply is shown",
+        "not ok 322 - blackburne: the board never teleports — every ply is shown",
+        "not ok 325 - nezhmetdinov: the board never teleports — every ply is shown",
+        "not ok 328 - deepblue: the board never teleports — every ply is shown",
+        "not ok 331 - shortwalk: the board never teleports — every ply is shown",
+        "not ok 334 - zugzwang: the board never teleports — every ply is shown",
+        "not ok 337 - shirov: the board never teleports — every ply is shown",
+        "not ok 340 - gukesh: the board never teleports — every ply is shown",
+        "not ok 379 - byrne63: narration is in order, fits its slots and reads cleanly",
+        "not ok 387 - kasparov: narration is in order, fits its slots and reads cleanly",
+        "not ok 391 - laskerbauer: narration is in order, fits its slots and reads cleanly",
+        "not ok 399 - shortwalk: narration is in order, fits its slots and reads cleanly",
+        "not ok 401 - zugzwang: narration is in order, fits its slots and reads cleanly"
+      ]
+    },
+    {
+      "module": "src/storygen.js",
+      "id": "badge-ignore-explicit-zero",
+      "from": "b.at != null ? b.at",
+      "to": "b.at ? b.at",
+      "line": 137,
+      "killed": true,
+      "failures": [
+        "not ok 412 - badges can start at zero or on either boundary ply of a bridge"
+      ]
+    },
+    {
+      "module": "src/storygen.js",
+      "id": "badge-bridge-upper-bound",
+      "from": "p <= bridge.toPly",
+      "to": "p < bridge.toPly",
+      "line": 130,
+      "killed": true,
+      "failures": [
+        "not ok 412 - badges can start at zero or on either boundary ply of a bridge"
+      ]
+    },
+    {
+      "module": "src/storygen.js",
+      "id": "badge-bridge-lower-bound",
+      "from": "p >= bridge.fromPly",
+      "to": "p > bridge.fromPly",
+      "line": 130,
+      "killed": true,
+      "failures": [
+        "not ok 412 - badges can start at zero or on either boundary ply of a bridge"
+      ]
+    },
+    {
+      "module": "src/script.js",
+      "id": "say-move-castle-long-condition",
+      "from": "m[1] === 'O-O-O'",
+      "to": "m[1] !== 'O-O-O'",
+      "line": 24,
+      "killed": true,
+      "failures": [
+        "not ok 345 - chess moves are read out as words",
+        "not ok 346 - on-screen copy becomes plain sentences for the voice"
+      ]
+    },
+    {
+      "module": "src/script.js",
+      "id": "stamp-minute-off-by-one",
+      "from": "Math.floor(t / 60)",
+      "to": "Math.floor(t / 60) + 1",
+      "line": 142,
+      "killed": true,
+      "failures": [
+        "not ok 408 - time stamps read m:ss.hh",
+        "not ok 409 - batch writes narration.txt and cuts.txt into every Day folder, brand-free"
+      ]
+    },
+    {
+      "module": "src/script.js",
+      "id": "cuts-final-lands-at-start",
+      "from": "last.start + 0.55 * (last.end - last.start)",
+      "to": "last.start",
+      "line": 133,
+      "killed": true,
+      "failures": [
+        "not ok 413 - FINAL cut marks the last move landing rather than the beginning of its slot"
+      ]
+    },
+    {
+      "module": "src/script.js",
+      "id": "cuts-omit-bridge-at-zero",
+      "from": "if (cfg.bridgeStart != null)",
+      "to": "if (cfg.bridgeStart)",
+      "line": 130,
+      "killed": true,
+      "failures": [
+        "not ok 414 - a bridge that starts at time zero still gets its BRIDGE cut"
+      ]
+    },
+    {
+      "module": "src/scene.js",
+      "id": "montage-start-strict-boundary",
+      "from": "if (t < cfg.flurryStart)",
+      "to": "if (t <= cfg.flurryStart)",
+      "line": 49,
+      "killed": true,
+      "failures": [
+        "not ok 342 - montage starts from the initial board and begins moving at the exact start"
+      ]
+    },
+    {
+      "module": "src/scene.js",
+      "id": "montage-wrong-start-board",
+      "from": "posBefore(cfg.flurryFromPly - 1)",
+      "to": "posBefore(cfg.flurryFromPly + 1)",
+      "line": 49,
+      "killed": true,
+      "failures": [
+        "not ok 342 - montage starts from the initial board and begins moving at the exact start"
+      ]
+    },
+    {
+      "module": "src/scene.js",
+      "id": "bridge-start-strict-boundary",
+      "from": "t >= cfg.bridgeStart",
+      "to": "t > cfg.bridgeStart",
+      "line": 66,
+      "killed": true,
+      "failures": [
+        "not ok 343 - bridge shows each intervening ply and settles at its exact end"
+      ]
+    },
+    {
+      "module": "src/scene.js",
+      "id": "bridge-end-inclusive",
+      "from": "t < cfg.bridgeEnd",
+      "to": "t <= cfg.bridgeEnd",
+      "line": 67,
+      "killed": true,
+      "failures": [
+        "not ok 343 - bridge shows each intervening ply and settles at its exact end"
+      ]
+    },
+    {
+      "module": "src/scene.js",
+      "id": "bridge-count-off-by-one",
+      "from": "cfg.bridgeToPly - cfg.bridgeFromPly + 1",
+      "to": "cfg.bridgeToPly - cfg.bridgeFromPly - 1",
+      "line": 68,
+      "killed": true,
+      "failures": [
+        "not ok 343 - bridge shows each intervening ply and settles at its exact end"
+      ]
+    },
+    {
+      "module": "src/scene.js",
+      "id": "drop-slot-strict-boundary",
+      "from": "t >= s.start",
+      "to": "t > s.start",
+      "line": 98,
+      "killed": true,
+      "failures": [
+        "not ok 344 - drop switches weighted slots at the boundary and ends on the final board"
+      ]
+    },
+    {
+      "module": "src/scene.js",
+      "id": "drop-end-inclusive",
+      "from": "t < cfg.dropAt + cfg.dropDur",
+      "to": "t <= cfg.dropAt + cfg.dropDur",
+      "line": 92,
+      "killed": true,
+      "failures": [
+        "not ok 344 - drop switches weighted slots at the boundary and ends on the final board"
+      ]
+    },
+    {
+      "module": "src/renderer.js",
+      "id": "scrub-return-early",
+      "from": "let o = 0, moovStart = -1",
+      "to": "return buf; let o = 0, moovStart = -1",
+      "line": 25,
+      "killed": true,
+      "failures": [
+        "not ok 249 - MP4 scrub zeros both timestamp widths while preserving flags and other fields"
+      ]
+    },
+    {
+      "module": "src/renderer.js",
+      "id": "scrub-skip-eight-byte-box",
+      "from": "o + 8 <= buf.length",
+      "to": "o + 8 < buf.length",
+      "line": 26,
+      "killed": false,
+      "failures": []
+    },
+    {
+      "module": "src/renderer.js",
+      "id": "scrub-ignore-moov-boundary",
+      "from": "i < moovEnd",
+      "to": "true",
+      "line": 36,
+      "killed": true,
+      "failures": [
+        "not ok 250 - MP4 scrub preserves video payload even when it contains timestamp tag bytes"
+      ]
+    },
+    {
+      "module": "src/renderer.js",
+      "id": "scrub-v0-wrong-version",
+      "from": "if (ver === 0)",
+      "to": "if (ver === 2)",
+      "line": 38,
+      "killed": true,
+      "failures": [
+        "not ok 249 - MP4 scrub zeros both timestamp widths while preserving flags and other fields",
+        "not ok 251 - MP4 scrub leaves absent metadata, unknown versions and partial top-level headers alone"
+      ]
+    },
+    {
+      "module": "src/renderer.js",
+      "id": "scrub-v1-wrong-version",
+      "from": "else if (ver === 1)",
+      "to": "else if (ver === 2)",
+      "line": 39,
+      "killed": true,
+      "failures": [
+        "not ok 249 - MP4 scrub zeros both timestamp widths while preserving flags and other fields",
+        "not ok 251 - MP4 scrub leaves absent metadata, unknown versions and partial top-level headers alone"
+      ]
+    },
+    {
+      "module": "src/renderer.js",
+      "id": "scrub-v1-wrong-offset",
+      "from": "buf.writeUInt32BE(0, i + 20)",
+      "to": "buf.writeUInt32BE(0, i + 24)",
+      "line": 39,
+      "killed": true,
+      "failures": [
+        "not ok 249 - MP4 scrub zeros both timestamp widths while preserving flags and other fields"
+      ]
+    },
+    {
+      "module": "finish/music.py",
+      "id": "timeline-unknown-kind",
+      "from": "kind not in KINDS or not math.isfinite(t)",
+      "to": "False or not math.isfinite(t)",
+      "line": 40,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_music.py::test_timeline_rejects_one_corrupted_event[cue0]"
+      ]
+    },
+    {
+      "module": "finish/music.py",
+      "id": "timeline-allow-negative",
+      "from": "or t < 0:",
+      "to": "or False:",
+      "line": 40,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_music.py::test_timeline_rejects_one_corrupted_event[cue1]"
+      ]
+    },
+    {
+      "module": "finish/music.py",
+      "id": "timeline-allow-zero-duplicate",
+      "from": "if kind in times:",
+      "to": "if kind in times and times[kind]:",
+      "line": 43,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_music.py::test_timeline_rejects_each_missing_or_duplicate_structural_cue[REVEAL]"
+      ]
+    },
+    {
+      "module": "finish/music.py",
+      "id": "timeline-allow-duplicates",
+      "from": "if kind in times:",
+      "to": "if False:",
+      "line": 43,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_music.py::test_timeline_rejects_each_missing_or_duplicate_structural_cue[REVEAL]"
+      ]
+    },
+    {
+      "module": "finish/music.py",
+      "id": "timeline-allow-equal-boundaries",
+      "from": "times[a] < times[b]",
+      "to": "times[a] <= times[b]",
+      "line": 49,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_music.py::test_timeline_rejects_equal_and_reversed_section_boundaries[0]"
+      ]
+    },
+    {
+      "module": "finish/music.py",
+      "id": "timeline-reject-end-event",
+      "from": "float(cue[\"t\"]) > times[\"END\"]",
+      "to": "float(cue[\"t\"]) >= times[\"END\"]",
+      "line": 51,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_music.py::test_all_fixture_arrangements[phonk-0] - ValueEr..."
+      ]
+    },
+    {
+      "module": "finish/music.py",
+      "id": "timeline-allow-after-end",
+      "from": "if any(float(cue[\"t\"]) > times[\"END\"] for cue in cues):",
+      "to": "if False:",
+      "line": 51,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_music.py::test_invalid_timeline - Failed: DID NOT RAISE <c..."
+      ]
+    },
+    {
+      "module": "finish/music.py",
+      "id": "wav-skip-shape-validation",
+      "from": "audio.ndim != 2 or audio.shape[1] != 2",
+      "to": "False",
+      "line": 365,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_music.py::test_wav_rejects_wrong_shape_and_nonfinite_samples_before_writing[audio0]"
+      ]
+    },
+    {
+      "module": "finish/music.py",
+      "id": "wav-allow-nonfinite",
+      "from": "or not np.isfinite(audio).all()",
+      "to": "or False",
+      "line": 365,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_music.py::test_wav_rejects_wrong_shape_and_nonfinite_samples_before_writing[audio4]"
+      ]
+    },
+    {
+      "module": "finish/music.py",
+      "id": "wav-allow-fractional-rate",
+      "from": "not isinstance(sr, int) or sr <= 0",
+      "to": "sr <= 0",
+      "line": 367,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_music.py::test_wav_rejects_invalid_sample_rate_before_writing[8000.5]"
+      ]
+    },
+    {
+      "module": "finish/music.py",
+      "id": "wav-wrong-channel-count",
+      "from": "wav.setnchannels(2)",
+      "to": "wav.setnchannels(1)",
+      "line": 371,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_music.py::test_wav_pcm_roundtrip - AssertionError: assert ..."
+      ]
+    },
+    {
+      "module": "finish/music.py",
+      "id": "wav-skip-clipping",
+      "from": "np.clip(audio, -1, 1) * 32767",
+      "to": "audio * 32767",
+      "line": 369,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_music.py::test_wav_clips_overload_instead_of_wrapping_signed_pcm"
+      ]
+    },
+    {
+      "module": "finish/finish.py",
+      "id": "voice-ignore-room",
+      "from": "if len(audio) / VOICE_SR > room:",
+      "to": "if False:",
+      "line": 67,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_finish.py::test_voice_track_resynthesizes_crowded_speech_with_bounded_speed[0.8]"
+      ]
+    },
+    {
+      "module": "finish/finish.py",
+      "id": "voice-no-speed-cap",
+      "from": "min(1.35, len(audio) / VOICE_SR / room * 1.02)",
+      "to": "len(audio) / VOICE_SR / room * 1.02",
+      "line": 68,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_finish.py::test_voice_track_resynthesizes_crowded_speech_with_bounded_speed[2.0]"
+      ]
+    },
+    {
+      "module": "finish/finish.py",
+      "id": "voice-wrong-start",
+      "from": "start = int(line[\"t\"] * VOICE_SR)",
+      "to": "start = int(line[\"t\"] * VOICE_SR) + 1",
+      "line": 70,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_finish.py::test_voice_track_places_samples_at_exact_cues_and_truncates_at_video_end"
+      ]
+    },
+    {
+      "module": "finish/finish.py",
+      "id": "voice-no-end-truncation",
+      "from": "return track[: int(end * VOICE_SR)], placed",
+      "to": "return track, placed",
+      "line": 74,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_finish.py::test_voice_track_places_samples_at_exact_cues_and_truncates_at_video_end"
+      ]
+    },
+    {
+      "module": "finish/finish.py",
+      "id": "peak-use-first-measurement",
+      "from": "float(lines[-1].split()[1])",
+      "to": "float(lines[0].split()[1])",
+      "line": 182,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_finish.py::test_true_peak_uses_final_decoded_summary_and_rejects_missing_or_malformed_peak"
+      ]
+    },
+    {
+      "module": "finish/finish.py",
+      "id": "run-ignore-command-failure",
+      "from": "if r.returncode:",
+      "to": "if False:",
+      "line": 115,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_finish.py::test_command_runner_accepts_success_and_stops_on_nonzero_status"
+      ]
+    },
+    {
+      "module": "finish/gather_cues.py",
+      "id": "seconds-subtract-fraction",
+      "from": "int(m) * 60 + float(s)",
+      "to": "int(m) * 60 - float(s)",
+      "line": 14,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_finish.py::test_gather_cues_parses_folder - AssertionError..."
+      ]
+    },
+    {
+      "module": "finish/gather_cues.py",
+      "id": "cuts-accept-truncated-line",
+      "from": "\\s+(\\S+)\\s*(.*)$",
+      "to": "\\s*(\\S*)\\s*(.*)$",
+      "line": 10,
+      "killed": true,
+      "failures": [
+        "FAILED finish/test_finish.py::test_gather_ignores_truncated_cut_rows_and_timeline_rejects_missing_end"
+      ]
+    }
+  ]
+}

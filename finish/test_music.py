@@ -182,3 +182,94 @@ def test_invalid_timeline():
         render(cues + [{'kind': 'BADGE', 't': float('nan')}], 'phonk', 0, SR)
     with pytest.raises(ValueError):
         render(cues + [{'kind': 'BADGE', 't': 10000}], 'phonk', 0, SR)
+
+
+# These small validation cases complement the synthesis matrix above: a score
+# must not silently accept a corrupted cue sheet or serialize invalid PCM.
+@pytest.fixture
+def short_timeline():
+    return [{'kind': kind, 't': float(i)} for i, kind in enumerate(
+        ['REVEAL', 'TENSION', 'DROP', 'OUTRO', 'END'])]
+
+
+def test_timeline_accepts_zero_start_repeated_events_and_end_boundary(short_timeline):
+    from music import _timeline
+
+    cues = short_timeline + [{'kind': 'HOOK', 't': 0}, {'kind': 'HOOK', 't': 0},
+                             {'kind': 'BADGE', 't': 4}]
+    assert _timeline(cues) == {'REVEAL': 0, 'TENSION': 1, 'DROP': 2, 'OUTRO': 3, 'END': 4}
+
+
+@pytest.mark.parametrize('kind', ['REVEAL', 'TENSION', 'DROP', 'OUTRO', 'END'])
+def test_timeline_rejects_each_missing_or_duplicate_structural_cue(short_timeline, kind):
+    from music import _timeline
+
+    with pytest.raises(ValueError, match='are required'):
+        _timeline([c for c in short_timeline if c['kind'] != kind])
+    original = next(c for c in short_timeline if c['kind'] == kind)
+    with pytest.raises(ValueError, match='Duplicate structural cue'):
+        _timeline(short_timeline + [dict(original)])
+
+
+@pytest.mark.parametrize('index', range(4))
+def test_timeline_rejects_equal_and_reversed_section_boundaries(short_timeline, index):
+    from music import _timeline
+
+    for shift in [0, -0.25]:
+        bad = [dict(c) for c in short_timeline]
+        bad[index + 1]['t'] = bad[index]['t'] + shift
+        with pytest.raises(ValueError):
+            _timeline(bad)
+
+
+@pytest.mark.parametrize('cue', [
+    {'kind': 'UNKNOWN', 't': 1}, {'kind': 'HOOK', 't': -0.001},
+    {'kind': 'HOOK', 't': float('nan')}, {'kind': 'HOOK', 't': float('inf')},
+    {'kind': 'HOOK', 't': -float('inf')}, {'kind': 'BADGE', 't': 4.001},
+])
+def test_timeline_rejects_one_corrupted_event(short_timeline, cue):
+    from music import _timeline
+
+    with pytest.raises(ValueError):
+        _timeline(short_timeline + [cue])
+
+
+@pytest.mark.parametrize('audio', [
+    np.zeros(2), np.zeros((2, 1)), np.zeros((2, 3)), np.zeros((2, 2, 1)),
+    np.array([[0., float('nan')]]), np.array([[float('inf'), 0.]]),
+])
+def test_wav_rejects_wrong_shape_and_nonfinite_samples_before_writing(tmp_path, audio):
+    path = tmp_path / 'invalid.wav'
+    with pytest.raises(ValueError, match='finite.*samples, 2'):
+        write_wav(path, audio, SR)
+    assert not path.exists()
+
+
+@pytest.mark.parametrize('sr', [0, -1, 8000.5])
+def test_wav_rejects_invalid_sample_rate_before_writing(tmp_path, sr):
+    path = tmp_path / 'invalid.wav'
+    with pytest.raises(ValueError, match='positive integer'):
+        write_wav(path, np.zeros((2, 2)), sr)
+    assert not path.exists()
+
+
+def test_wav_clips_overload_instead_of_wrapping_signed_pcm(tmp_path):
+    path = tmp_path / 'clipped.wav'
+    write_wav(path, np.array([[2., -2.], [0., 0.5]]), SR)
+    with wave.open(str(path), 'rb') as wav:
+        assert (wav.getnframes(), wav.getnchannels(), wav.getsampwidth(),
+                wav.getframerate()) == (2, 2, 2, SR)
+        pcm = np.frombuffer(wav.readframes(2), dtype='<i2').reshape(2, 2)
+    np.testing.assert_array_equal(pcm, [[32767, -32767], [0, 16384]])
+
+
+def test_music_cli_rejects_truncated_json_before_creating_outputs(tmp_path, monkeypatch):
+    import music
+
+    cues = tmp_path / 'truncated.json'
+    cues.write_text('[{"id": "test", "cues": [', encoding='utf-8')
+    out = tmp_path / 'output'
+    monkeypatch.setattr(sys, 'argv', ['music.py', str(cues), str(out)])
+    with pytest.raises(json.JSONDecodeError):
+        music.main()
+    assert not out.exists()

@@ -235,3 +235,93 @@ def test_finish_cli_passes_supplied_paths(tmp_path, monkeypatch, capsys):
     finishing.main()
     assert calls == [((edits[1], games, out, kokoro, "test_voice"), {"seed": 2, "burn_subs": True})]
     assert json.loads(capsys.readouterr().out) == {"id": "selected"}
+
+
+def test_voice_track_places_samples_at_exact_cues_and_truncates_at_video_end():
+    # Constant synthetic speech makes trim a no-op and exposes sample offsets.
+    calls = []
+
+    def create(text, **kwargs):
+        calls.append((text, kwargs))
+        return np.full(VOICE_SR // 4, .25, dtype=np.float32), VOICE_SR
+
+    lines = [{'t': .25, 'text': 'First.'}, {'t': 1.875, 'text': 'Last.'}]
+    track, placed = finishing.voice_track({'narration': lines}, SimpleNamespace(create=create), 'test', 2.)
+    assert track.shape == (2 * VOICE_SR,)
+    assert track.dtype == np.float32
+    assert not np.any(track[:VOICE_SR // 4])
+    np.testing.assert_array_equal(track[VOICE_SR // 4:VOICE_SR // 2], .25)
+    assert not np.any(track[VOICE_SR // 2:int(1.875 * VOICE_SR)])
+    np.testing.assert_array_equal(track[int(1.875 * VOICE_SR):], .25)
+    assert [(p[0], p[1], p[2]) for p in placed] == [(lines[0], .25, .25), (lines[1], 1.875, .25)]
+    assert all(c[1]['voice'] == 'test' and c[1]['lang'] == 'en-us' for c in calls)
+
+
+@pytest.mark.parametrize('duration', [.8, 2.])
+def test_voice_track_resynthesizes_crowded_speech_with_bounded_speed(duration):
+    calls = []
+
+    def create(text, **kwargs):
+        speed = kwargs['speed']
+        calls.append(speed)
+        return np.full(round(duration / speed * VOICE_SR), .25, dtype=np.float32), VOICE_SR
+
+    lines = [{'t': .1, 'text': 'Crowded.'}, {'t': .9, 'text': 'Next.'}]
+    track, placed = finishing.voice_track({'narration': lines}, SimpleNamespace(create=create), 'test', 3.)
+    expected = min(1.35, duration / (.9 - .1 - .08) * 1.02)
+    assert calls[:2] == pytest.approx([1., expected])
+    assert placed[0][3] == pytest.approx(expected)
+    assert placed[0][2] == pytest.approx(round(duration / expected * VOICE_SR) / VOICE_SR)
+    assert track.shape == (3 * VOICE_SR,)
+
+
+def test_true_peak_uses_final_decoded_summary_and_rejects_missing_or_malformed_peak(monkeypatch):
+    def measure(stderr):
+        def run(cmd):
+            assert cmd[0] == 'ffmpeg'
+            assert cmd[cmd.index('-i') + 1] == 'encoded.m4a'
+            assert 'ebur128=peak=true' in cmd
+            return SimpleNamespace(stderr=stderr)
+
+        monkeypatch.setattr(finishing, 'run', run)
+        return finishing.true_peak(Path('encoded.m4a'))
+
+    assert measure('  Peak: -8.0 dBFS\nnoise\n  Peak: -1.2 dBFS\n') == -1.2
+    with pytest.raises(IndexError):
+        measure('truncated report\n')
+    with pytest.raises(ValueError):
+        measure('  Peak: broken dBFS\n')
+
+
+def test_command_runner_accepts_success_and_stops_on_nonzero_status(monkeypatch):
+    for status in [0, 1]:
+        result = SimpleNamespace(returncode=status, stdout='ok', stderr='failure detail')
+
+        def run(cmd, **kwargs):
+            assert cmd == ['media-tool', 'input']
+            assert kwargs == {'capture_output': True, 'text': True}
+            return result
+
+        monkeypatch.setattr(finishing.subprocess, 'run', run)
+        if status:
+            with pytest.raises(SystemExit, match='failure detail'):
+                finishing.run(['media-tool', 'input'])
+        else:
+            assert finishing.run(['media-tool', 'input']) is result
+
+
+def test_gather_ignores_truncated_cut_rows_and_timeline_rejects_missing_end(games):
+    from music import _timeline
+
+    day = games / 'Day 01 — A quiet victory'
+    cuts = day / 'cuts.txt'
+    cuts.write_text('0:00.00 REVEAL\n0:01.00 TENSION\n0:02.00 DROP\n'
+                    '0:03.00 OUTRO\n0:04.00 END\n', encoding='utf-8')
+    assert _timeline(gather_cues(games)[0]['cues'])['END'] == 4
+    # Losing the END token must not turn a timestamp-only row into an event.
+    cuts.write_text('0:00.00 REVEAL\n0:01.00 TENSION\n0:02.00 DROP\n'
+                    '0:03.00 OUTRO\n0:04.00\n', encoding='utf-8')
+    cues = gather_cues(games)[0]['cues']
+    assert len(cues) == 4
+    with pytest.raises(ValueError, match='are required'):
+        _timeline(cues)
